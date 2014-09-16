@@ -1,0 +1,23 @@
+{
+    "size": 0,
+    "query" : {
+        "query_string" : {  
+            "query": "type:PushEvent"
+        }
+    },
+    "facets" : {
+        "Active Repositories" : {
+            "terms" : {
+                "script_field" : "_source.repository.full_name",
+                "size" : 10
+            }
+        },
+        "Active Users" : {
+            "terms" : {
+                "script_field" : "_source.actor",
+                "size" : 10
+            }
+        }
+    }
+}
+

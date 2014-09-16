@@ -1,0 +1,63 @@
+{
+  "size": 0, 
+  "aggs": {
+     "GitHubActions": {
+                "filter" : {
+                    "range": {
+                        "created_at" : {
+                            "from" : "2014-08-10T17:00:00",
+                            "to" : "2014-08-10T18:00:00"
+                        }
+                    }
+                },
+                "aggs": {
+                    "Actions": {
+                        "date_histogram": {
+                            "min_doc_count": 0,
+                            "extended_bounds": {
+                                    "min" : "2014-08-10T17:00:00",
+                                    "max" : "2014-08-10T18:00:00"
+                            },
+                            "field": "created_at",
+                            "format" : "yyyy-MM-dd'T'HH:mm:ss",
+                            "interval": "10m"
+                        },
+                        "aggs": {
+                            "Pushed": {
+                                "filter": {
+                                    "query": {
+                                        "query_string": {
+                                           "query": "type:PushEvent"
+                                        }
+                                    }
+                                },
+                                "aggs": {
+                                    "stats": {
+                                        "extended_stats" : { 
+                                            "field" : "repository.size"  
+                                        }
+                                    }
+                                }
+                            },                            
+                            "Deleted": {
+                                "filter": {
+                                    "query": {
+                                        "query_string": {
+                                           "query": "type:DeleteEvent"
+                                        }
+                                    }
+                                },
+                                "aggs": {
+                                    "stats": {
+                                        "extended_stats" : { 
+                                            "field" : "repository.size"   
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        }
+    }
+}
