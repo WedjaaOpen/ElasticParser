@@ -201,7 +201,15 @@ public class AggregateResolver {
 				Map<String, Object> subMap = subIter.next();
 				Iterator<Map<String,Object>> resIter = result.iterator();
 				while ( resIter.hasNext() ) {
-					subMap.putAll(resIter.next());
+					Map<String,Object> resultMap = resIter.next();
+					Iterator<String> resKeyIter = resultMap.keySet().iterator(); 
+					while ( resKeyIter.hasNext() ) {
+						String resKey = resKeyIter.next();
+						// Don't overwrite inner values
+						if ( !subMap.containsKey(resKey) ) {
+							subMap.put(resKey, resultMap.get(resKey));
+						}
+					}
 				}
 			}
 			result = subValues;
