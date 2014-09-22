@@ -240,13 +240,13 @@ public class AggregateResolver {
 					}
 				}
 				Map<String, Object> entryMap = createBucketsMap(aggregation, bucket, bucketClass, parentAggregation);
-				if ( bucketAggsValues != null ) {
+				if ( bucketAggsValues != null 
+						&& bucketAggsValues.size() > 0 ) {
 					Iterator<Map<String, Object>> subIter = bucketAggsValues.iterator();
 					while ( subIter.hasNext() ) {
 						Map<String, Object> subMap = subIter.next();
 						subMap.putAll(entryMap);
 						result.add(subMap);
-						//entryMap.putAll(subMap);
 					}
 				} else {
 					result.add(entryMap);	

@@ -499,6 +499,7 @@ public class ESSearch implements Connection {
 		return wrappedClass.equals(ESSearch.class);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T unwrap(Class<T> wrappedClass) throws SQLException {
 		return (T) wrappedClass;
