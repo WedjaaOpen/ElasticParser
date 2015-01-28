@@ -166,6 +166,7 @@ public class ESSearchTester {
 		System.out.println("Preparing Unit Test Index - this may take a while...");
 		populateTest();
 		
+		try {
 		System.out.println("...OK - Executing query!");
 		// Try our searches
 		ESSearch search = new ESSearch(null, null, ESSearch.ES_MODE_AGGS, "localhost", 9600, "elasticparser.unittest" );
@@ -187,8 +188,13 @@ public class ESSearchTester {
 			String fieldname = sortedKeyIter.next();
 			System.out.println(" --> " + fieldname + "["+ fields.get(fieldname).getCanonicalName() +"]");
 		}
-
-		node.stop();
+		
+		} catch(Exception ex) {
+			System.out.println("Exception: " + ex);
+		} finally {
+			System.out.println("Stopping Test Node");
+			node.stop();
+		}
 	}
 
 }

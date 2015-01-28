@@ -59,22 +59,6 @@ public class AggregateResolver {
 
 	}
 
-	private Class<?> getBucketsClass(Class<?> aggregationClass) {
-
-		if (!classFinder.hasMethod("getBuckets", aggregationClass)) {
-			logger.warn("Can't get getBuckets method for "
-					+ aggregationClass.getCanonicalName());
-			return null;
-		}
-
-		return getBucketsClass(classFinder.getMethod("getBuckets", aggregationClass));
-
-	}
-
-	private Class<?> getBucketsClass(Method getBucketsMethod) {
-		return classFinder.getMethodReturnClass(getBucketsMethod);
-	}
-
 	private Class<?> getAggregationClass(InternalAggregation aggregation) {
 		return aggregation.getClass();
 	}
@@ -221,23 +205,21 @@ public class AggregateResolver {
 	public List<Map<String, Object>> unrollAggregationBuckets(InternalAggregation aggregation, String parentAggregation) {
 
 		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+
 		if ( parentAggregation == null ) {
 			parentAggregation = aggregation.getName();
 		}
+		
 		logger.debug("unrollBucket: " +aggregation.getName() + "; Parent: " + parentAggregation);
 
-		// Find out the type of entries on this facet
-		Class<?> aggClass = getAggregationClass(aggregation);
-		Class<?> bucketClass = getBucketsClass(aggClass);
-
-		// Get the list of entries
 		List<Class<?>> buckets = getBuckets(aggregation);
 
 		if (buckets != null) {
 
 			for (Object bucket : buckets) {
 				List<Map<String, Object>> bucketAggsValues = null;
-				Method getAggregationsMethod = classFinder.getMethod("getAggregations", bucketClass);
+				logger.debug("Bucket Class: " + bucket.getClass());
+				Method getAggregationsMethod = classFinder.getMethod("getAggregations", bucket.getClass());
 				if ( getAggregationsMethod != null ) {
 					try {
 						Aggregations bucketAggregations = (Aggregations) getAggregationsMethod.invoke(bucket);
@@ -247,7 +229,7 @@ public class AggregateResolver {
 					} catch (InvocationTargetException e) {
 					}
 				}
-				Map<String, Object> entryMap = createBucketsMap(aggregation, bucket, bucketClass, parentAggregation);
+				Map<String, Object> entryMap = createBucketsMap(aggregation, bucket, bucket.getClass(), parentAggregation);
 				if ( bucketAggsValues != null 
 						&& bucketAggsValues.size() > 0 ) {
 					Iterator<Map<String, Object>> subIter = bucketAggsValues.iterator();

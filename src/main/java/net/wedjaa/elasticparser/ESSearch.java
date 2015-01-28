@@ -41,6 +41,7 @@ import java.sql.Struct;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Executor;
 
 import net.wedjaa.elasticparser.pager.ESAggregationPager;
 import net.wedjaa.elasticparser.pager.ESEmptyPager;
@@ -784,6 +785,37 @@ public class ESSearch implements Connection {
 	public void setTypeMap(Map<String, Class<?>> arg0) throws SQLException {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public void setSchema(String schema) throws SQLException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public String getSchema() throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void abort(Executor executor) throws SQLException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setNetworkTimeout(Executor executor, int milliseconds)
+			throws SQLException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public int getNetworkTimeout() throws SQLException {
+		// TODO Auto-generated method stub
+		return 0;
 	}
    
 }

@@ -1,23 +1,28 @@
 {
     "aggs" : {
-    	"Attack Endpoints": {
+    	"Repository Stats": {
                 "filter" : {
                     "range": {
-                        "AlertDateTime" : {
+                        "created_at" : {
                             "from" : "2014-08-01T00:00:00",
                             "to" : "2014-09-01T00:00:00"
                         }
                     }
                 },
 				"aggs" : {
-        			"Sources of Attacks" : {
-            			"terms" : { "field" : "SrcAddressInt" }
+        			"Actors" : {
+            			"terms" : { "field" : "actor" },
+            			"aggs": {
+            			  "Actor Stats": {
+            			    "stats": { "field": "payload.size"}
+            			  }
+            			}
         			},
-        			"Attack Targets" : {
-            			"terms" : { "field" : "DestAddressInt" }
+        			"Event Type" : {
+            			"terms" : { "field" : "type" }
         			}
 				}
 		}
     },
-    "size": 0
+    "size": 50
 }
