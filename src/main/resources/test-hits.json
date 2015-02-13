@@ -1,6 +1,25 @@
 {
-    "size": 10,
-    "query" : {
-        "match_all": {}
-    }
+   "query": {
+      "filtered": {
+         "query": {
+            "match_all": {}
+         },
+         "filter": {
+            "and": {
+               "filters": [
+                  {
+                     "term": {
+                        "issueType": "bug"
+                     }
+                  },
+                  {
+                     "exists": {
+                        "field": "bugs.2015-02-03"
+                     }
+                  }
+               ]
+            }
+         }
+      }
+   }
 }

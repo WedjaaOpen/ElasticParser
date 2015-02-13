@@ -368,16 +368,11 @@ public class ESSearch implements Connection {
  		this.esClient = transportClient;
         
     }
-    
 
-    
-    private void runQuery(String query) {
-    	    	
-        logger.debug("Complete search request: " + query);
+    private SearchResponse executeSearch(String query, int start, int page_size) {
+
+    	SearchRequestBuilder searchBuilder;
         
-        connect();
-
-        SearchRequestBuilder searchBuilder;
         if ( indexes.length > 0 ) {
         	searchBuilder = esClient.prepareSearch(indexes);
         } else {
@@ -388,10 +383,33 @@ public class ESSearch implements Connection {
         	searchBuilder.setTypes(types);
         }
         
+        if ( start >= 0 && page_size >=0 ) {
+            JSONObject queryObject = new JSONObject(query);
+            queryObject.put("size", page_size);
+            queryObject.put("from", start);
+            query = queryObject.toString();
+        }
+        
         SearchResponse searchRes = 	searchBuilder
         	.setSource(query.getBytes())
         	.execute()
         	.actionGet();
+        
+        return searchRes;
+    	
+    }
+    
+    private SearchResponse executeSearch(String query) {
+    	return executeSearch(query, -1, -1);
+    }
+    
+    private void runQuery(String query) {
+    	    	
+        logger.debug("Complete search request: " + query);
+        
+        connect();
+
+        SearchResponse searchRes = 	executeSearch(query);
         
         logger.debug("The query returns " + searchRes.getHits().getTotalHits() + " total matches.");
         logger.debug("Response: " + searchRes.toString());
@@ -441,6 +459,8 @@ public class ESSearch implements Connection {
     
     public Map<String, Object> next() {
 
+    	logger.debug("Next!");
+    	
     	if ( pager.done() ) {
     		logger.debug("Pager is done - disposing of client.");
     		if ( this.esClient != null ) {
@@ -450,21 +470,15 @@ public class ESSearch implements Connection {
     	}
     	
     	if ( !pager.hit_available() ) {
-    		logger.debug("Gettin a page of hits");
+    		logger.debug("Getting a page of hits - from: " + pager.current_hit_idx() + ", size: " + pager.page_size());
     		// No hits are available - fetch the next
     		// page of hits for the query
-        	searchResponse = esClient.prepareSearch(indexes)
-                	.setTypes(types)
-                	.setSource(pager.get_query().getBytes())
-                	.setFrom((int) pager.next_page()) 
-                	.setSize(pager.page_size())
-                	.execute()
-                	.actionGet();
+            searchResponse = executeSearch(pager.get_query(), pager.current_hit_idx(), pager.page_size());
         	pager.set_page_size(searchResponse.getHits().getHits().length);
         	logger.debug("Page hits: " + pager.page_size());
     	}
     	    	
-    	logger.trace("Returning hit at: " + (pager.current_hit_idx() + 1) +  " of " + pager.page_size());
+    	logger.debug("Returning hit at: " + (pager.current_hit_idx() + 1) +  " of " + pager.page_size());
     	
         return pager.next(searchResponse);
         

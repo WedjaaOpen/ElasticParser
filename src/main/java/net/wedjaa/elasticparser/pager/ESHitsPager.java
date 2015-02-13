@@ -34,7 +34,7 @@ import org.elasticsearch.search.SearchHit;
 
 public class ESHitsPager implements ESResultsPager {
 	
-	public final static int PAGE_SIZE = 100;
+	public final static int PAGE_SIZE = 5;
 	
 	private long total_hits = 0;
 	private int page = 0;
@@ -65,6 +65,7 @@ public class ESHitsPager implements ESResultsPager {
 	}
 	
 	public boolean hit_available() {
+		logger.debug("Hits info: next result " + result_idx + " of " + page_size);
 		return (result_idx + 1) < page_size && page >= 0;
 	}
 	
@@ -82,6 +83,8 @@ public class ESHitsPager implements ESResultsPager {
 	}
 
 	public void  set_page_size(int page_size) {
+		this.page = 0;
+		this.result_idx = -1;
 		this.page_size = page_size;
 	}
 	
@@ -94,7 +97,8 @@ public class ESHitsPager implements ESResultsPager {
 	}
 	
 	public boolean done() {
-		return hits_count >= total_hits;
+		logger.debug("Checking if done: current hits: " + hits_count + " of " + total_hits);
+		return hits_count > total_hits;
 	}
 	
 	public String get_query() {
@@ -107,6 +111,7 @@ public class ESHitsPager implements ESResultsPager {
 		if ( response.getHits().hits().length > (current_hit_idx() + 1) ) {
 			return response.getHits().getAt(this.next_hit_idx()).getSource();
 		}
+		logger.debug("Page exausted!");
 		return null;
 	}
 
