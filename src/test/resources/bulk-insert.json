@@ -1,0 +1,50 @@
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 1st", "description": "my description 1", "group": "utilitarians", "id": "1", "number": 5, "stat": 10 }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 2nd", "description": "my description 2", "group": "practicals", "id": "2", "number": 4, "stat": 12 }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 3rd", "description": "my description 3", "group": "pragmatist", "id": "3", "number": 4, "stat": 13  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 4th", "description": "my description 4", "group": "utilitarians", "id": "4", "number": 5, "stat": 16  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 5th", "description": "my description 5", "group": "practicals", "id": "5", "number": 7, "stat": 11  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 6th", "description": "my description 6", "group": "pragmatist", "id": "6", "number": 3, "stat": 1  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 7th", "description": "my description 7", "group": "utilitarians", "id": "7", "number": 1, "stat": 8  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 8th", "description": "my description 8", "group": "practicals", "id": "8", "number": 5, "stat": 20  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 9th", "description": "my description 9", "group": "utilitarians", "id": "9", "number": 8, "stat": 18  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 10th", "description": "my description 10", "group": "utilitarians", "id": "10", "number": 9, "stat": 15  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 11th", "description": "my description 11", "group": "practicals", "id": "11", "number": 1, "stat": 18  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 12th", "description": "my description 12", "group": "pragmatist", "id": "12", "number": 2, "stat": 10  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 13th", "description": "my description 13", "group": "utilitarians", "id": "13", "number": 3, "stat": 7  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 14th", "description": "my description 14", "group": "practicals", "id": "14", "number": 4, "stat": 4  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 15th", "description": "my description 15", "group": "practicals", "id": "15", "number": 6, "stat": 3  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 16th", "description": "my description 16", "group": "utilitarians", "id": "16", "number": 7, "stat": 19  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 17th", "description": "my description 17", "group": "pragmatist", "id": "17", "number": 5, "stat": 11  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 18th", "description": "my description 18", "group": "utilitarians", "id": "18", "number": 2, "stat": 14  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 19th", "description": "my description 19", "group": "practicals", "id": "19", "number": 6, "stat": 17  }
+{ "index" : { "_index" : "unit", "_type" : "test" } }
+{ "name": "the 20th", "description": "my description 20", "group": "utilitarians", "id": "20", "number": 3, "stat": 17  }
+{ "index" : { "_index" : "unit", "_type" : "related" } }
+{ "id": "20", "note": "20th note" }
+{ "index" : { "_index" : "unit", "_type" : "related" } }
+{ "id": "12", "note": "12th note" }
+{ "index" : { "_index" : "unit", "_type" : "related" } }
+{ "id": "7", "note": "7th note" }
+{ "index" : { "_index" : "unit", "_type" : "related" } }
+{ "id": "4", "note": "4th note" }
+{ "index" : { "_index" : "unit", "_type" : "related" } }
+{ "id": "10", "note": "10th note" }

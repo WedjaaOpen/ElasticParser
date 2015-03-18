@@ -79,7 +79,7 @@ public class ESFacetsPager implements ESResultsPager {
 	}
 
 	@Override
-	public int current_hit_idx() {
+	public long current_hit_idx() {
 		return current_idx;
 	}
 
@@ -87,6 +87,11 @@ public class ESFacetsPager implements ESResultsPager {
 	public int page_size() {
 		return facet_values.size();
 	}
+
+    @Override
+    public long getResultsCount() {
+        return facet_values.size();
+    }
 
 	@Override
 	public int next_page() {
@@ -99,7 +104,7 @@ public class ESFacetsPager implements ESResultsPager {
 	}
 
 	@Override
-	public Map<String, Object> next(SearchResponse response) {
+	public Map<String, Object> next() {
 		current_idx++;
 		return valueIterator.next();
 	}

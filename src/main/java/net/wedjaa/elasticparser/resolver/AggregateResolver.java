@@ -39,8 +39,13 @@ import org.elasticsearch.search.aggregations.InternalAggregation;
 
 public class AggregateResolver {
 
-	private ClassFinder classFinder;
-	
+    private static final String AGGREGATION_NULL = "Null";
+    public final static String AGGREGATION_BUCKETS = "Buckets";
+    public final static String AGGREGATION_SIMPLE = "Simple";
+
+    private ClassFinder classFinder;
+
+
 	private static AggregateResolver instance = null;
 
 	private static final Logger logger = Logger.getLogger(AggregateResolver.class);
@@ -59,12 +64,12 @@ public class AggregateResolver {
 
 	}
 
-	private Class<?> getAggregationClass(InternalAggregation aggregation) {
+	private Class<?> getAggregationClass(Aggregation aggregation) {
 		return aggregation.getClass();
 	}
 
 	@SuppressWarnings("unchecked")
-	private List<Class<?>> getBuckets(InternalAggregation aggregation) {
+	private List<Class<?>> getBuckets(Aggregation aggregation) {
 
 		List<Class<?>> buckets = null;
 
@@ -72,7 +77,7 @@ public class AggregateResolver {
 
 		if (aggregationClass == null) {
 			logger.warn("Can't get entries for unknown aggregation type: "
-					+ aggregation.type().name());
+					+ aggregation.getClass());
 			return null;
 		}
 
@@ -89,14 +94,14 @@ public class AggregateResolver {
 				logger.debug("Returning " + buckets.size() + " buckets.");
 			}
 		} catch (IllegalAccessException e) {
-			logger.warn("Failed to get entries on facet of type "
-					+ aggregation.getName() + ": " + e.getLocalizedMessage());
+			logger.trace("Failed to get entries on aggregation of type " + aggregation.getName() + ": " + e
+                    .getLocalizedMessage());
 		} catch (IllegalArgumentException e) {
-			logger.warn("Failed to get entries on facet of type "
-					+ aggregation.getName() + ": " + e.getLocalizedMessage());
+			logger.trace("Failed to get entries on aggregation of type " + aggregation.getName() + ": " + e
+                    .getLocalizedMessage());
 		} catch (InvocationTargetException e) {
-			logger.warn("Failed to get entries on facet of type "
-					+ aggregation.getName() + ": " + e.getLocalizedMessage());
+			logger.trace("Failed to get entries on aggregation of type " + aggregation.getName() + ": " + e
+                    .getLocalizedMessage());
 		}
 
 		return buckets;
@@ -105,12 +110,14 @@ public class AggregateResolver {
 
 
 	private Map<String, Object> createBucketsMap(
-			InternalAggregation aggregation, Object bucket,
+			Aggregation aggregation, Object bucket,
 			Class<?> bucketClass, String parentAggregation) {
 
 		Map<String, Object> result = new HashMap<String, Object>();
 
-		logger.debug("entry[" + parentAggregation + "] = " + aggregation.getName());
+        String aggregationName = aggregation.getName();
+
+		logger.debug("createBucketsMap - entry[" + parentAggregation + "] = " + aggregationName);
 		result.put(parentAggregation, aggregation.getName());
 
 		List<Method> bucketMethods = classFinder.getClassMethods(bucketClass);
@@ -120,29 +127,33 @@ public class AggregateResolver {
 				String key = method.getName().substring(3);
 				if (!key.equals("Class") && !key.equals("Aggregations")) {
 					try {
+                        // Make the method accessible by
+                        // default.
+                        method.setAccessible(true);
 						Object value = method.invoke(bucket);
+                        String effectiveKey =  aggregationName + " " + key;
 						if (value != null && !value.toString().equals("NaN")) {
-							logger.debug("   entry["  + key + "] = " + value);
-							result.put( key , value);
+							logger.debug("   entry["  + effectiveKey + "] = " + value);
+							result.put( effectiveKey , value);
 						} else {
 							// We need to fill in missing data in aggregations
 							// or Jasper will choke on it at times.
 							if ( method.getReturnType().getCanonicalName().equals(String.class.getCanonicalName()) ) {
 								// Fill in the String
-								result.put(key, "");
+								result.put(effectiveKey, "");
 							} else {
-								result.put(key, 0.0);
+								result.put(effectiveKey, 0.0);
 							}
 						}
 					} catch (IllegalAccessException e) {
-						logger.warn("Failed to execute method "
-								+ method.getName() + " on entry: " + bucket);
+						logger.trace("Failed to execute method " + method.getName() + " on entry: " + bucket + ": " + e
+                                .toString());
 					} catch (IllegalArgumentException e) {
-						logger.warn("Failed to execute method "
-								+ method.getName() + " on entry: " + bucket);
+						logger.trace("Failed to execute method " + method.getName() + " on entry: " + bucket + ": " + e
+                                .toString());
 					} catch (InvocationTargetException e) {
-						logger.warn("Failed to execute method "
-								+ method.getName() + " on entry: " + bucket);
+						logger.trace("Failed to execute method " + method.getName() + " on entry: " + bucket + ": " + e
+                                .toString());
 					}
 				}
 			}
@@ -151,27 +162,29 @@ public class AggregateResolver {
 		return result;
 	}
 
-	public List<Map<String, Object>> unrollSimpleAggregation(InternalAggregation aggregation, String parentAggregation) {
+	public List<Map<String, Object>> unrollSimpleAggregation(Aggregation aggregation, String parentAggregation, int depth) {
+
 		if ( parentAggregation == null ) {
 			parentAggregation = "";
 		} 
 
-		logger.trace("unrollSimple: " +aggregation.getName() + "; Parent: " + parentAggregation);
+		logger.debug("unrollSimple: " + aggregation.getName() + "; Parent: " + parentAggregation +"; Depth: " + depth);
 		Class<?> aggClass = aggregation.getClass();
 		List<Map<String, Object>> subValues = null;
 		if ( classFinder.hasMethod("getAggregations", aggClass) ) {
-			logger.trace("This is a single bucket aggregation of some sort....");
+			logger.debug("This is a single bucket aggregation of some sort....");
 			Method getAggregationsMethod = classFinder.getMethod("getAggregations", aggClass);
 			if ( getAggregationsMethod != null ) {
 				try {
+                    getAggregationsMethod.setAccessible(true);
 					Aggregations subAggregations = (Aggregations) getAggregationsMethod.invoke(aggregation);
-					subValues = explode(subAggregations, aggregation.getName() );
+					subValues = explode(subAggregations, aggregation.getName(), depth+1);
 				} catch (IllegalArgumentException e) {
-					logger.debug("Illegal argument exception calling getAggregations on " + aggClass);
+					logger.trace("Illegal argument exception calling getAggregations on " + aggClass);
 				} catch (IllegalAccessException e) {
-					logger.debug("Illegal access exception calling getAggregations on " + aggClass);
+					logger.trace("Illegal access exception calling getAggregations on " + aggClass);
 				} catch (InvocationTargetException e) {
-					logger.debug("Illegal Invocation Targer exception calling getAggregations on " + aggClass);
+					logger.trace("Illegal Invocation Target exception calling getAggregations on " + aggClass);
 				}
 			}
 		}
@@ -202,45 +215,109 @@ public class AggregateResolver {
 		return result;
 	}
 
-	public List<Map<String, Object>> unrollAggregationBuckets(InternalAggregation aggregation, String parentAggregation) {
+    /**
+     * Adds the contents of a simple bucket to an entry. This method will alter the contents of the
+     * entry that's passed to it.
+     *
+     * @param entryMap                  The entry to populate with the bucket data.
+     * @param aggregation               The aggregation bucket containing the data.
+     * @param parentAggregationName     The parent aggregation name.
+     * @param depth                     The depth of this unrolling.
+     *
+     */
+    private void addBucket(Map<String, Object> entryMap, Aggregation aggregation, String parentAggregationName, int depth) {
+        List<Map<String, Object>> subEntry = unrollSimpleAggregation(aggregation, parentAggregationName, depth);
+        Iterator<Map<String, Object>> subIter = subEntry.iterator();
+        while (subIter.hasNext())
+        {
+            Map<String, Object> subMap = subIter.next();
+            entryMap.putAll(subMap);
+        }
+    }
+
+	public List<Map<String, Object>> unrollAggregationBuckets(Aggregation aggregation, String parentAggregation, int depth) {
 
 		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
 
 		if ( parentAggregation == null ) {
 			parentAggregation = aggregation.getName();
 		}
-		
-		logger.debug("unrollBucket: " +aggregation.getName() + "; Parent: " + parentAggregation);
+
+        logger.debug("unrollBucket: " + aggregation.getName() + "; Parent: " + parentAggregation +"; Depth: " + depth);
 
 		List<Class<?>> buckets = getBuckets(aggregation);
 
 		if (buckets != null) {
 
+
 			for (Object bucket : buckets) {
+
+                //  These are the buckets that need to be split into
+                //  multiple entries.
+                List<List<Map<String, Object>>> splitBuckets = new ArrayList<>();
+                Map<String, Object> entryMap = createBucketsMap(aggregation, bucket, bucket.getClass(), parentAggregation);
+
 				List<Map<String, Object>> bucketAggsValues = null;
 				logger.debug("Bucket Class: " + bucket.getClass());
+
 				Method getAggregationsMethod = classFinder.getMethod("getAggregations", bucket.getClass());
-				if ( getAggregationsMethod != null ) {
-					try {
-						Aggregations bucketAggregations = (Aggregations) getAggregationsMethod.invoke(bucket);
-						bucketAggsValues = explode(bucketAggregations, aggregation.getName());
-					} catch (IllegalArgumentException e) {
-					} catch (IllegalAccessException e) {
-					} catch (InvocationTargetException e) {
-					}
-				}
-				Map<String, Object> entryMap = createBucketsMap(aggregation, bucket, bucket.getClass(), parentAggregation);
-				if ( bucketAggsValues != null 
-						&& bucketAggsValues.size() > 0 ) {
-					Iterator<Map<String, Object>> subIter = bucketAggsValues.iterator();
-					while ( subIter.hasNext() ) {
-						Map<String, Object> subMap = subIter.next();
-						subMap.putAll(entryMap);
-						result.add(subMap);
-					}
-				} else {
-					result.add(entryMap);	
-				}
+				if ( getAggregationsMethod != null )
+                {
+                    try
+                    {
+                        logger.debug("Processing " + aggregation.getName() + " buckets.");
+                        Aggregations bucketAggregations = (Aggregations) getAggregationsMethod.invoke(bucket);
+                        for (Aggregation bucketAggregation : bucketAggregations.asList())
+                        {
+                            if (getAggregationType(bucketAggregation).equals(AGGREGATION_SIMPLE))
+                            {
+                                logger.debug("This bucket ["+ bucketAggregation.getName() +"] goes into entry: " + aggregation.getName());
+                                addBucket(entryMap, bucketAggregation, aggregation.getName(), depth + 1);
+                            }
+                            else
+                            {
+                                logger.debug("This bucket [" + bucketAggregation.getName() + "] gets split into multiple entries.");
+                                splitBuckets.add(unrollAggregationBuckets(bucketAggregation, aggregation.getName(), depth + 1));
+                            }
+                        }
+                        logger.debug(aggregation.getName() + " buckets exploration complete!");
+
+                        if (splitBuckets.size() > 0)
+                        {
+                            logger.debug("Splitting into multiple entries");
+                            Iterator<List<Map<String, Object>>> splitBucketsIter = splitBuckets.iterator();
+                            while (splitBucketsIter.hasNext())
+                            {
+                                Iterator<Map<String, Object>> subEntryIter = splitBucketsIter.next().iterator();
+                                while (subEntryIter.hasNext())
+                                {
+                                    Map<String, Object> subMap = subEntryIter.next();
+                                    subMap.putAll(entryMap);
+                                    logger.debug("Adding " + subMap + " to results for " + aggregation.getName());
+                                    result.add(subMap);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            logger.debug("["+aggregation.getName()+"] Returning a single entry: " + entryMap);
+                            result.add(entryMap);
+                        }
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        logger.trace("Illegal argument exception calling getAggregations on " + bucket);
+                    }
+                    catch (IllegalAccessException e)
+                    {
+                        logger.trace("Illegal access exception calling getAggregations on " + bucket);
+                    }
+                    catch (InvocationTargetException e)
+                    {
+                        logger.trace("Illegal Invocation Target exception calling getAggregations on " + bucket);
+                    }
+                }
+
 			}
 		}
 		logger.debug("Unrolled Returning: " + result);
@@ -248,49 +325,57 @@ public class AggregateResolver {
 		return result;
 	}
 
-	public List<Map<String, Object>> unrollAggregation(InternalAggregation aggregation, String parentAggregation) {
+    public String getAggregationType(Aggregation aggregation) {
+
+        Class<?> aggregationClass = aggregation.getClass();
+
+        if (aggregationClass == null) {
+            return AGGREGATION_NULL;
+        }
+
+        if ( classFinder.getClassMethods(aggregationClass) == null ) {
+            return AGGREGATION_NULL;
+        }
+
+        if (classFinder.hasMethod("getBuckets", aggregationClass)) {
+            return AGGREGATION_BUCKETS;
+        }
+
+        return AGGREGATION_SIMPLE;
+    }
+
+	public List<Map<String, Object>> unrollAggregation(InternalAggregation aggregation, String parentAggregation, int depth) {
 
 		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
 
-		Class<?> aggregationClass = aggregation.getClass();
+        String aggregationType = getAggregationType(aggregation);
 
-		if (aggregationClass == null) {
-			logger.warn("Failed to get aggregation class for type: "
-					+ aggregation.type().name());
-			return result;
-		}
+        if ( aggregationType.equals(AGGREGATION_NULL) ) {
+            logger.warn("Failed to unroll aggregation");
+        }
 
-		logger.trace("Class for aggregation '" + aggregation.getName() + "': "
-				+ aggregationClass.getCanonicalName());
-		
-		if ( classFinder.getClassMethods(aggregationClass) == null ) {
-			logger.warn("Failed to get methods for aggregation class "
-					+ aggregationClass.getCanonicalName());
-			return result;
-		}
+        if ( aggregationType.equals(AGGREGATION_BUCKETS)) {
+            logger.trace("Is a bucket type of aggregation, unrolling it");
+            return unrollAggregationBuckets(aggregation, parentAggregation, depth);
+        }
 
-		if (classFinder.hasMethod("getBuckets", aggregationClass)) {
-			logger.trace("Is a bucket type of aggregation, unrolling it");
-			return unrollAggregationBuckets(aggregation, parentAggregation);
-
-		}
-		logger.trace("Is a single aggregation - like statistics");
-		return unrollSimpleAggregation(aggregation, parentAggregation);
+        logger.trace("Is a single aggregation - like statistics");
+        return unrollSimpleAggregation(aggregation, parentAggregation, depth);
 	}
 
-	private List<Map<String, Object>> explode(Aggregations aggregations, String parentAggregation) {
-		return explode(aggregations.asMap(), parentAggregation);
+	private List<Map<String, Object>> explode(Aggregations aggregations, String parentAggregation, int depth) {
+		return explode(aggregations.asMap(), parentAggregation, depth);
 	}
 
 	public List<Map<String, Object>> explode(Aggregations aggregations) {
-		return explode(aggregations.asMap(), "Aggregation");
+		return explode(aggregations.asMap(), "Aggregation", 0);
 	}
 
 	public List<Map<String, Object>> explode(Map<String, Aggregation> aggregations) {
-		return  explode(aggregations, "Aggregation");
+		return  explode(aggregations, "Aggregation", 0);
 	}
 	
-	private List<Map<String, Object>> explode(Map<String, Aggregation> aggregations, String parentAggregation) {
+	private List<Map<String, Object>> explode(Map<String, Aggregation> aggregations, String parentAggregation, int depth) {
 
 		List<Map<String, Object>> entries = new ArrayList<Map<String, Object>>();
 
@@ -298,7 +383,7 @@ public class AggregateResolver {
 
 		Set<String> aggregation_names = aggregations.keySet();
 		for (String aggregation_name : aggregation_names) {
-			entries.addAll(unrollAggregation((InternalAggregation) aggregations.get(aggregation_name), parentAggregation));
+			entries.addAll(unrollAggregation((InternalAggregation) aggregations.get(aggregation_name), parentAggregation, depth));
 		}
 
 		return entries;

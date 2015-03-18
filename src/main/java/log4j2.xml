@@ -6,7 +6,7 @@
     </Console>
   </Appenders>
   <Loggers>
-    <Logger name="net.wedjaa.elasticparser" level="info" additivity="false">
+    <Logger name="net.wedjaa.elasticparser" level="debug" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
     <Logger name="org.elasticsearch" level="info" additivity="false">

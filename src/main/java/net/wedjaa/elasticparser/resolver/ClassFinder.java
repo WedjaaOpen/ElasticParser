@@ -25,7 +25,6 @@ package net.wedjaa.elasticparser.resolver;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
@@ -149,16 +148,9 @@ public class ClassFinder {
 			logger.warn("Can't get return class type because of null method.");
 			return null;
 		}
-		logger.debug("Method class: " + method.getClass().toString());
-		logger.debug("Method as String: " + method.toString());
-		Class<?> returnedClass = method.getReturnType();
-		logger.debug("Returned Class: " +returnedClass.toString());
-		Type[] parameterizedClass =  ((ParameterizedType) method.getGenericReturnType().getClass().getGenericSuperclass()).getActualTypeArguments();
-		logger.debug("Parameterized SuperClass: " + parameterizedClass.toString());
-		
-		// logger.debug("With new test" + ((ParameterizedType) method.getReturnType().getGenericSuperclass()).getActualTypeArguments()[0]);
-		
-		ParameterizedType genericClassType = (ParameterizedType) method.getGenericReturnType();
+
+		ParameterizedType genericClassType = (ParameterizedType) method
+				.getGenericReturnType();
 
 		Class<?> genericClass =  genericClassType.getClass();
 
