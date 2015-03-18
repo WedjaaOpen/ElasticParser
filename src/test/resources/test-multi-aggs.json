@@ -1,0 +1,21 @@
+{
+  "aggs": {
+    "People Groups": {
+      "terms": {
+        "field": "group"
+      },
+      "aggs": {
+          "Number Stats": {
+            "stats": {
+              "field": "number"
+            }
+          },
+	      "General Stats": {
+	        "stats": {
+		      "field": "stat"
+	        }
+	      }
+      }
+    }
+  }
+}

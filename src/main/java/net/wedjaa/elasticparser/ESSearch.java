@@ -58,6 +58,8 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
+
 import org.json.JSONObject;
 
 public class ESSearch implements Connection
@@ -78,7 +80,6 @@ public class ESSearch implements Connection
     private int port;
     private int searchMode;
 
-    private SearchResponse searchResponse;
     private static Logger logger = Logger.getLogger(ESSearch.class);
 
     public final static int ES_MODE_HITS = 0;
@@ -90,8 +91,9 @@ public class ESSearch implements Connection
     public final static String ES_DEFAULT_CLUSTER = "elasticsearch";
     public final static int ES_DEFAULT_SEARCH_MODE = ES_MODE_HITS;
 
+
     /**
-     * @return a ESSearch initialized to connect to the local node and search on
+     * Create an ESSearch instance initialized to connect to the local node and search on
      * all the indexes and types returning the <em>Hits</em>.
      */
     public ESSearch()
@@ -100,15 +102,15 @@ public class ESSearch implements Connection
     }
 
     /**
-     * @param indexes    a comma separated list of indexes that should be searched. If
+     * Create a ESSearch object initialized to connect to the local node with
+     * the default connection parameters, returning what was specified
+     *
+     * as a searchMode.     * @param indexes    a comma separated list of indexes that should be searched. If
      *                   <em>null</em> all the indexes will be searched.
      * @param types      a comma separated list of types that should be searched.If
      *                   <em>null</em> all the types will be searched.
      * @param searchMode the type of results we want to obtain: hits, facets or
      *                   aggregates
-     * @return a ESSearch object initialized to connect to the local node with
-     * the default connection parameters, returning what was specified
-     * as a searchMode.
      */
     public ESSearch(String indexes, String types, int searchMode)
     {
@@ -116,12 +118,13 @@ public class ESSearch implements Connection
     }
 
     /**
+     * Create a ESSearch object initialized to connect to the local node with
+     * the default connection parameters, returning <em>Hits</em>.
+     *
      * @param indexes a comma separated list of indexes that should be searched. If
      *                <em>null</em> all the indexes will be searched.
      * @param types   a comma separated list of types that should be searched.If
      *                <em>null</em> all the types will be searched.
-     * @return a ESSearch object initialized to connect to the local node with
-     * the default connection parameters, returning <em>Hits</em>.
      */
     public ESSearch(String indexes, String types)
     {
@@ -129,6 +132,9 @@ public class ESSearch implements Connection
     }
 
     /**
+     * Create a ESSearch object initialized to connect to the specified node to
+     * search the specified indexes and types, returning <em>Hits</em>.
+     *
      * @param indexes  a comma separated list of indexes that should be searched. If
      *                 <em>null</em> all the indexes will be searched.
      * @param types    a comma separated list of types that should be searched.If
@@ -136,8 +142,6 @@ public class ESSearch implements Connection
      * @param hostname hostname to connect to - or IP address
      * @param port     a port to connect to for trasport. The default transport port
      *                 is 9300.
-     * @return a ESSearch object initialized to connect to the specified node to
-     * search the specified indexes and types, returning <em>Hits</em>.
      */
     public ESSearch(String indexes, String types, String hostname, int port)
     {
@@ -145,6 +149,10 @@ public class ESSearch implements Connection
     }
 
     /**
+     * Create a ESSearch object initialized to connect to the specified node to
+     * search the specified indexes and types, returning hits, facets or
+     * aggregates depending on searchMode.
+     *
      * @param indexes    a comma separated list of indexes that should be searched. If
      *                   <em>null</em> all the indexes will be searched.
      * @param types      a comma separated list of types that should be searched.If
@@ -154,9 +162,6 @@ public class ESSearch implements Connection
      * @param hostname   hostname to connect to - or IP address
      * @param port       a port to connect to for trasport. The default transport port
      *                   is 9300.
-     * @return a ESSearch object initialized to connect to the specified node to
-     * search the specified indexes and types, returning hits, facets or
-     * aggregates depending on searchMode.
      */
     public ESSearch(String indexes, String types, int searchMode, String hostname, int port)
     {
@@ -164,6 +169,10 @@ public class ESSearch implements Connection
     }
 
     /**
+     * Create a ESSearch object initialized to connect to the specified node
+     * and cluster to search the specified indexes and types, returning
+     * <em>Hits</em>.
+     *
      * @param indexes  a comma separated list of indexes that should be searched. If
      *                 <em>null</em> all the indexes will be searched.
      * @param types    a comma separated list of types that should be searched.If
@@ -173,9 +182,6 @@ public class ESSearch implements Connection
      *                 is 9300.
      * @param cluster  a cluster name to join. The default cluster name is
      *                 "elasticsearch".
-     * @return a ESSearch object initialized to connect to the specified node
-     * and cluster to search the specified indexes and types, returning
-     * <em>Hits</em>.
      */
     public ESSearch(String indexes, String types, String hostname, int port, String cluster)
     {
@@ -183,6 +189,10 @@ public class ESSearch implements Connection
     }
 
     /**
+     * Create a ESSearch object initialized to connect to the specified node
+     * and cluster to search the specified indexes and types, returning
+     * hits, facets or aggregates depending on searchMode.
+     *
      * @param indexes    a comma separated list of indexes that should be searched. If
      *                   <em>null</em> all the indexes will be searched.
      * @param types      a comma separated list of types that should be searched.If
@@ -194,9 +204,6 @@ public class ESSearch implements Connection
      *                   is 9300.
      * @param cluster    a cluster name to join. The default cluster name is
      *                   "elasticsearch".
-     * @return a ESSearch object initialized to connect to the specified node
-     * and cluster to search the specified indexes and types, returning
-     * hits, facets or aggregates depending on searchMode.
      */
     public ESSearch(String indexes, String types, int searchMode, String hostname, int port, String cluster)
     {
@@ -204,6 +211,12 @@ public class ESSearch implements Connection
     }
 
     /**
+     * Create a ESSearch object initialized to connect to the specified node
+     * and cluster to search the specified indexes and types, returning
+     * hits, facets or aggregates depending on searchMode. This
+     * connection handles authentication with the username and password
+     * provided.
+     *
      * @param indexes    a comma separated list of indexes that should be searched. If
      *                   <em>null</em> all the indexes will be searched.
      * @param types      a comma separated list of types that should be searched.If
@@ -217,11 +230,6 @@ public class ESSearch implements Connection
      * @param password   the password of the user specified to connect to ElasticSearch
      * @param cluster    a cluster name to join. The default cluster name is
      *                   "elasticsearch".
-     * @return a ESSearch object initialized to connect to the specified node
-     * and cluster to search the specified indexes and types, returning
-     * hits, facets or aggregates depending on searchMode. This
-     * connection handles authentication with the username and password
-     * provided.
      */
     public ESSearch(String indexes, String types, int searchMode, String hostname, int port, String username,
             String password, String cluster)
@@ -239,7 +247,7 @@ public class ESSearch implements Connection
         this.esClient = null;
     }
 
-    /*
+    /**
      * @param esClient An already connected ElasticSearch client that can be
      * used to execute the queries.
      *
@@ -255,7 +263,7 @@ public class ESSearch implements Connection
         this.keepClient = true;
     }
 
-    /*
+    /**
      * Creates a clone of this ESSearch, keeping the searchMode
      *
      * @returns a clone of this ESSearch
@@ -414,9 +422,32 @@ public class ESSearch implements Connection
 
     }
 
-    ;
+    private int getPageSize(String query) {
+        /**
+         * If not specified by the user, use a page size we
+         * are comfortable with.
+         */
+        int page_size = ESHitsPager.PAGE_SIZE;
 
-    private SearchResponse executeSearch(String query, long start, int page_size)
+        JSONObject queryObject = new JSONObject(query);
+        if (queryObject.has("size"))
+        {
+            page_size = queryObject.getInt("size");
+        }
+
+        return page_size;
+    }
+
+    private String setQuerySize(String query) {
+        JSONObject queryObject = new JSONObject(query);
+        if (!queryObject.has("size"))
+        {
+            queryObject.put("size", ESHitsPager.PAGE_SIZE);
+        }
+        return queryObject.toString();
+    }
+
+    private SearchResponse executeSearch(String query, boolean isScrolling)
     {
 
         SearchRequestBuilder searchBuilder;
@@ -430,28 +461,42 @@ public class ESSearch implements Connection
             searchBuilder = esClient.prepareSearch();
 
         }
+
+        // Setup a scroll search for multi-paged results
+        if ( isScrolling ) {
+            logger.debug("Creating a scrolling query");
+            searchBuilder
+                    .setSearchType(SearchType.SCAN)
+                    .setScroll(new TimeValue(ESHitsPager.SCROLL_KEEPALIVE));
+
+        }  else {
+            logger.debug("The query is not scrolling");
+        }
+
+        // If types were specified restrict the search to those
         if (types.length > 0)
         {
             searchBuilder.setTypes(types);
         }
 
-        if (start >= 0 && page_size >= 0)
-        {
-            JSONObject queryObject = new JSONObject(query);
-            queryObject.put("size", page_size);
-            queryObject.put("from", start);
-            query = queryObject.toString();
+        String sizedQuery = setQuerySize(query);
+
+        // Execute the search
+        SearchResponse searchRes =  searchBuilder
+                                        .setSource(query)
+                                        .execute()
+                                        .actionGet();
+
+        logger.debug("Search ready");
+        if ( isScrolling ) {
+            logger.debug("ScrollId: " + searchRes.getScrollId());
         }
-
-        SearchResponse searchRes = searchBuilder.setSource(query.getBytes()).execute().actionGet();
-
         return searchRes;
 
     }
 
-    private SearchResponse executeSearch(String query)
-    {
-        return executeSearch(query, -1, -1);
+    private SearchResponse executeSearch(String query) {
+        return executeSearch(query, false);
     }
 
     private void runQuery(String query, boolean countOnly)
@@ -472,18 +517,12 @@ public class ESSearch implements Connection
                 }
                 else
                 {
-                    searchRes = executeSearch(query);
+                    logger.debug("Executing scrolling query for hits");
+                    searchRes = executeSearch(query, true);
                 }
                 logger.debug("The query returns " + searchRes.getHits().getTotalHits() + " total matches.");
                 logger.debug("Response: " + searchRes.toString());
-                JSONObject queryObject = new JSONObject(query);
-                long maxHits = searchRes.getHits().getTotalHits();
-                if (queryObject.has("size"))
-                {
-                    maxHits = queryObject.getLong("size");
-                    logger.debug("Limiting query hits to stated size: " + maxHits);
-                }
-                pager = new ESHitsPager(searchRes, query, maxHits);
+                pager = new ESHitsPager(searchRes, query, getPageSize(query), esClient);
                 break;
             case ESSearch.ES_MODE_FACETS:
                 // Facets will return all the results in one
@@ -507,7 +546,7 @@ public class ESSearch implements Connection
 
     private void runQuery(String query)
     {
-        runQuery(query, true);
+        runQuery(query, false);
     }
 
     public void search(String query)
@@ -537,7 +576,7 @@ public class ESSearch implements Connection
     public Map<String, Object> next()
     {
 
-        logger.debug("Next!");
+        logger.trace("Next!");
 
         if (pager.done())
         {
@@ -549,19 +588,9 @@ public class ESSearch implements Connection
             return null;
         }
 
-        if (!pager.hit_available())
-        {
-            logger.debug("Getting a page of hits - from: " + pager.current_hit_idx() + ", size: " + pager.page_size());
-            // No hits are available - fetch the next
-            // page of hits for the query
-            searchResponse = executeSearch(pager.get_query(), pager.current_hit_idx(), pager.page_size());
-            pager.set_page_size(searchResponse.getHits().getHits().length);
-            logger.debug("Page hits: " + pager.page_size());
-        }
+        logger.debug("Returning hit at: " + (pager.current_hit_idx() + 1) + " of " + pager.getResultsCount());
 
-        logger.debug("Returning hit at: " + (pager.current_hit_idx() + 1) + " of " + pager.page_size());
-
-        return pager.next(searchResponse);
+        return pager.next();
 
     }
 
@@ -570,12 +599,7 @@ public class ESSearch implements Connection
 
         Map<String, Class<?>> result = new HashMap<String, Class<?>>();
         logger.debug("Getting fields using " + query);
-
-        JSONObject queryObject = new JSONObject(query);
-        queryObject.put("size", 1);
-        String sizedQuery = queryObject.toString();
-        // Let runQuery prepare the pager
-        runQuery(sizedQuery, false);
+        runQuery(query);
         result = pager.getResponseFields();
         close();
 
@@ -819,7 +843,7 @@ public class ESSearch implements Connection
      * @throws SecurityException               if a security manager exists and its
      *                                         <code>checkPermission</code> method denies calling
      *                                         <code>setNetworkTimeout</code>.
-     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws java.sql.SQLFeatureNotSupportedException if the JDBC driver does not support
      *                                         this method
      * @see SecurityManager#checkPermission
      * @see java.sql.Statement#setQueryTimeout
@@ -843,7 +867,7 @@ public class ESSearch implements Connection
      * no limit
      * @throws java.sql.SQLException           if a database access error occurs or
      *                                         this method is called on a closed <code>Connection</code>
-     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @throws java.sql.SQLFeatureNotSupportedException if the JDBC driver does not support
      *                                         this method
      * @see #setNetworkTimeout
      * @since 1.7

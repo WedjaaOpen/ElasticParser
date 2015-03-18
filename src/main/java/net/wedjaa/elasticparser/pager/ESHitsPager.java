@@ -24,49 +24,62 @@
 package net.wedjaa.elasticparser.pager;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.log4j.Logger;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.search.SearchHit;
 
 
 public class ESHitsPager implements ESResultsPager {
-	
+
+    /**
+     * This is the number of results per shard we are
+     * going to get by default.
+     */
 	public final static int PAGE_SIZE = 100;
-	
-	private long total_hits = 0;
+
+    // Time to keep the scrollid active: 1hr
+    public final static long SCROLL_KEEPALIVE = 3600000;
+    private Iterator<SearchHit> hits;
+    private final Client esClient;
+    private long total_hits = 0;
 	private int page = 0;
 	private int page_size = 0;
 	private long hits_count = 0;
-	private int result_idx = 0;
 	private String query;
-	private SearchResponse initialResponse;
+	private SearchResponse searchResponse;
 	private Logger logger = Logger.getLogger(ESHitsPager.class);
-	
-	public ESHitsPager(SearchResponse initialResponse, String query, long total) {
-		this(initialResponse, query, total, ESHitsPager.PAGE_SIZE);
-	}
-	
-	public ESHitsPager(SearchResponse initialResponse, String query, long total, int page_size) {
-		this.total_hits = total;
+
+	public ESHitsPager(SearchResponse searchResponse, String query, int page_size, Client esClient) {
+		this.total_hits = searchResponse.getHits().totalHits();
 		this.hits_count = 0;
+        /**
+         * This page size is here waiting for major refactoring
+         * to happen. It needs to be removed, since with scrolling
+         * the page size needs to be multiplied by the shards to
+         * get an idea of the number of results we will receive.
+         */
 		this.page_size = page_size;
 		this.query = query;
 		this.page = -1;
-		this.initialResponse = initialResponse;
+        this.searchResponse = searchResponse;
+        this.hits = searchResponse.getHits().iterator();
+        this.esClient = esClient;
 	}
 	
 	public int next_page() {
 		page++;
-		result_idx = -1;
 		return page * page_size;
 	}
 	
 	public boolean hit_available() {
-		logger.debug("Hits info: next result " + result_idx + " of " + page_size);
-		return (result_idx + 1) < page_size && page >= 0;
+		return hits_count < total_hits;
 	}
 	
 	public long current_hit_idx() {
@@ -75,29 +88,25 @@ public class ESHitsPager implements ESResultsPager {
 	
 	public int next_hit_idx() {
 		hits_count++;
-		return ++result_idx;
+		return (int) hits_count;
 	}
 	
 	public int page_size() {
 		return page_size;
 	}
 
+    @Override
+    public long getResultsCount() {
+        return total_hits;
+    }
+
 	public void  set_page_size(int page_size) {
 		this.page = 0;
-		this.result_idx = -1;
 		this.page_size = page_size;
 	}
-	
-	public boolean page_complete() {
-		return result_idx >= page_size;
-	}
-	
-	public long get_start() {
-		return page * page_size;
-	}
-	
+
 	public boolean done() {
-		logger.debug("Checking if done: current hits: " + hits_count + " of " + total_hits);
+		logger.trace("Checking if done: current hits: " + hits_count + " of " + total_hits);
 		return hits_count > total_hits;
 	}
 	
@@ -106,25 +115,75 @@ public class ESHitsPager implements ESResultsPager {
 	}
 
 	@Override
-	public Map<String, Object> next(SearchResponse response) {
-		// Make sure we have a hit to  return
-		if ( response.getHits().hits().length > (result_idx+1) ) {
-			return response.getHits().getAt(this.next_hit_idx()).getSource();
-		}
-		logger.debug("Page exausted!");
-		return null;
+	public Map<String, Object> next() {
+
+        // Get the next page_size of results if we have exhausted the
+        // current list.
+        if ( !hits.hasNext() )
+        {
+            try
+            {
+                logger.debug("Using ScrollID: " + searchResponse.getScrollId());
+                searchResponse = esClient.prepareSearchScroll(searchResponse.getScrollId())
+                        .setScroll(new TimeValue(SCROLL_KEEPALIVE))
+                        .execute().get();
+                logger.debug("Got another " + searchResponse.getHits().getHits().length + " results.");
+            } catch (Exception ex) {
+                logger.warn("Failed to get the next bunch of results! ["+ ex.getMessage()+"]");
+                return null;
+            }
+
+            hits = searchResponse.getHits().iterator();
+        }
+
+        if ( !hits.hasNext() ) {
+            // Nothing else to return, the search result was empty!
+            return null;
+        }
+
+        hits_count++;
+		return hits.next().getSource();
 	}
 
 	@Override
 	public Map<String,Class<?>> getResponseFields() {
-		
+        logger.debug("Hit Parser - Getting fields");
+
 		Map<String, Class<?>> result = new HashMap<String, Class<?>>();
-		logger.debug("Hit Parser - Getting fields");
-		
-		if ( initialResponse != null
-				&& initialResponse.getHits() != null ) {
+
+        /**
+         * We have not been properly initialized, return
+         * an empty set of fields.
+         */
+        if ( searchResponse == null ) {
+            logger.warn("Can't return fields for empty search!");
+            return result;
+        }
+
+        /**
+         * The searchResponse we have received when initialized
+         * is an empty one, we need to run the first search to
+         * get results from the scroll.
+         */
+        try
+        {
+            searchResponse =  esClient.prepareSearchScroll(searchResponse.getScrollId())
+                    .setScroll(new TimeValue(SCROLL_KEEPALIVE))
+                    .execute().get();
+        }
+        catch (Exception ex)
+        {
+            /**
+             * Return an empty set of fields in case of
+             * errors.
+             */
+            logger.warn("Error fetching results for fields: " + ex.getLocalizedMessage());
+            return result;
+        }
+        if (  searchResponse.getHits() != null ) {
 			logger.debug("Response has hits...");
-			SearchHit[] hits = initialResponse.getHits().getHits();
+			SearchHit[] hits = searchResponse.getHits().getHits();
+            logger.debug("Hits on this page: " + hits.length);
 			for ( SearchHit hit: hits) {
 				Set<String> field_names =  hit.getSource().keySet();
 				for ( String field_name: field_names) {

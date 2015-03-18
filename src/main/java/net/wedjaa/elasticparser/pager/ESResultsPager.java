@@ -34,7 +34,8 @@ public interface ESResultsPager {
 	public long current_hit_idx();
 	public int page_size();
 	public int next_page();
+    public long getResultsCount();
 	public String get_query();
-	public Map<String, Object> next(SearchResponse response);
+	public Map<String, Object> next();
 	public Map<String, Class<?>> getResponseFields();
 }

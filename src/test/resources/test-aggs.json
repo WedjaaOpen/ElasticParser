@@ -1,0 +1,23 @@
+{
+  "aggregations": {
+    "People Groups": {
+      "terms": {
+        "field": "group"
+      },
+      "aggregations": {
+	    "Group Number": {
+		  "terms": {
+			"field": "number"
+		  } ,
+          "aggregations": {
+            "Group Stats": {
+              "stats": {
+                "field": "stat"
+              }
+            }
+          }
+	    }
+      }
+    }
+  }
+}

@@ -66,13 +66,18 @@ public class ESEmptyPager implements ESResultsPager {
 		return 0;
 	}
 
+    @Override
+    public long getResultsCount() {
+        return 0;
+    }
+
 	@Override
 	public String get_query() {
 		return "";
 	}
 
 	@Override
-	public Map<String, Object> next(SearchResponse response) {
+	public Map<String, Object> next() {
 		return new HashMap<String, Object>();
 	}
 

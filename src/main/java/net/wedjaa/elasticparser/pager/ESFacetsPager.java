@@ -88,6 +88,11 @@ public class ESFacetsPager implements ESResultsPager {
 		return facet_values.size();
 	}
 
+    @Override
+    public long getResultsCount() {
+        return facet_values.size();
+    }
+
 	@Override
 	public int next_page() {
 		return 0;
@@ -99,7 +104,7 @@ public class ESFacetsPager implements ESResultsPager {
 	}
 
 	@Override
-	public Map<String, Object> next(SearchResponse response) {
+	public Map<String, Object> next() {
 		current_idx++;
 		return valueIterator.next();
 	}

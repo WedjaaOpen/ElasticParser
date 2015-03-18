@@ -87,6 +87,11 @@ public class ESAggregationPager implements ESResultsPager {
 		return aggregate_values.size();
 	}
 
+    @Override
+    public long getResultsCount() {
+        return aggregate_values.size();
+    }
+
 	@Override
 	public int next_page() {
 		return 0;
@@ -98,7 +103,7 @@ public class ESAggregationPager implements ESResultsPager {
 	}
 
 	@Override
-	public Map<String, Object> next(SearchResponse response) {
+	public Map<String, Object> next() {
 		current_idx++;
 		return valueIterator.next();
 	}
