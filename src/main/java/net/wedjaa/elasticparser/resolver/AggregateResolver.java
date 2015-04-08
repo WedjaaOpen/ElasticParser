@@ -269,15 +269,24 @@ public class AggregateResolver {
                         Aggregations bucketAggregations = (Aggregations) getAggregationsMethod.invoke(bucket);
                         for (Aggregation bucketAggregation : bucketAggregations.asList())
                         {
-                            if (getAggregationType(bucketAggregation).equals(AGGREGATION_SIMPLE))
+                            logger.debug("Bucket " +  bucketAggregation.getName() +", " + bucketAggregation.getClass().getName());
+                            if (getAggregationType(bucketAggregation).equals(AGGREGATION_SIMPLE)
+                                    && !bucketAggregation.getClass().getName().endsWith("Nested") )
                             {
                                 logger.debug("This bucket ["+ bucketAggregation.getName() +"] goes into entry: " + aggregation.getName());
                                 addBucket(entryMap, bucketAggregation, aggregation.getName(), depth + 1);
                             }
                             else
                             {
+
                                 logger.debug("This bucket [" + bucketAggregation.getName() + "] gets split into multiple entries.");
-                                splitBuckets.add(unrollAggregationBuckets(bucketAggregation, aggregation.getName(), depth + 1));
+                                if ( bucketAggregation.getClass().getName().endsWith("Nested") )   {
+                                    splitBuckets.add(unrollSimpleAggregation(bucketAggregation, aggregation.getName(), depth + 1));
+                                } else
+                                {
+                                    splitBuckets.add(unrollAggregationBuckets(bucketAggregation, aggregation.getName(),
+                                            depth + 1));
+                                }
                             }
                         }
                         logger.debug(aggregation.getName() + " buckets exploration complete!");
