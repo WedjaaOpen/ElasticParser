@@ -1,9 +1,5 @@
 {
-   "query": {
-      "filtered": {
-         "query": {
-            "match_all": {}
-         }
-      }
-   }
+ "query": {
+    "match_all": {}
+ }
 }

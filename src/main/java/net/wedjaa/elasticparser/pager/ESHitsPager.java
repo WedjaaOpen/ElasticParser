@@ -1,13 +1,13 @@
 /****
- * 
+ *
  * Copyright 2013-2014 Wedjaa <http://www.wedjaa.net/>
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -72,25 +72,25 @@ public class ESHitsPager implements ESResultsPager {
         this.hits = searchResponse.getHits().iterator();
         this.esClient = esClient;
 	}
-	
+
 	public int next_page() {
 		page++;
 		return page * page_size;
 	}
-	
+
 	public boolean hit_available() {
 		return hits_count < total_hits;
 	}
-	
+
 	public long current_hit_idx() {
 		return hits_count;
 	}
-	
+
 	public int next_hit_idx() {
 		hits_count++;
 		return (int) hits_count;
 	}
-	
+
 	public int page_size() {
 		return page_size;
 	}
@@ -109,7 +109,7 @@ public class ESHitsPager implements ESResultsPager {
 		logger.trace("Checking if done: current hits: " + hits_count + " of " + total_hits);
 		return hits_count > total_hits;
 	}
-	
+
 	public String get_query() {
 		return query;
 	}
@@ -167,6 +167,7 @@ public class ESHitsPager implements ESResultsPager {
          */
         try
         {
+						logger.debug("Getting the first scroll results");
             searchResponse =  esClient.prepareSearchScroll(searchResponse.getScrollId())
                     .setScroll(new TimeValue(SCROLL_KEEPALIVE))
                     .execute().get();
@@ -180,21 +181,25 @@ public class ESHitsPager implements ESResultsPager {
             logger.warn("Error fetching results for fields: " + ex.getLocalizedMessage());
             return result;
         }
+
         if (  searchResponse.getHits() != null ) {
-			logger.debug("Response has hits...");
-			SearchHit[] hits = searchResponse.getHits().getHits();
-            logger.debug("Hits on this page: " + hits.length);
-			for ( SearchHit hit: hits) {
-				Set<String> field_names =  hit.getSource().keySet();
-				for ( String field_name: field_names) {
-					if (!result.containsKey(field_name)) {
-						result.put(field_name, hit.getSource().get(field_name).getClass());
+					logger.debug("Response has hits...");
+					SearchHit[] hits = searchResponse.getHits().getHits();
+          logger.debug("Hits on this page: " + hits.length);
+					for ( SearchHit hit: hits) {
+						Set<String> field_names =  hit.getSource().keySet();
+						for ( String field_name: field_names) {
+							if (!result.containsKey(field_name)) {
+								if (hit.getSource().get(field_name) != null) {
+									result.put(field_name, hit.getSource().get(field_name).getClass());
+								}
+							}
+						}
 					}
-				}
+
 			}
-			
-		}
-		return result;
+
+			return result;
 	}
-	
+
 }
