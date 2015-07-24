@@ -4,7 +4,7 @@
   <groupId>net.wedjaa.elasticsearch</groupId>
   <artifactId>parser</artifactId>
   <packaging>jar</packaging>
-  <version>1.4.0-SNAPSHOT</version>
+  <version>1.3.0</version>
   <name>parser</name>
   <url>http://maven.apache.org</url>
   <properties>
