@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.elasticsearch.action.search.SearchResponse;
 
 public class ESEmptyPager implements ESResultsPager {
 

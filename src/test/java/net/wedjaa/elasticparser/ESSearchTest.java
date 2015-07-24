@@ -82,8 +82,7 @@ public class ESSearchTest
       // Try our searches
       ESSearch search = new ESSearch("unit", "test", ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
       search.search(getQuery("test-hits.json"));
-      Map<String, Object> hit;
-      while ((hit = search.next()) != null)
+      while ((search.next()) != null)
       {
           hitCount++;
       }
@@ -101,8 +100,7 @@ public class ESSearchTest
       // Try our searches
       ESSearch search = new ESSearch("unit", "test,related", ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
       search.search(getQuery("test-hits.json"));
-      Map<String, Object> hit;
-      while ((hit = search.next()) != null)
+      while ((search.next()) != null)
       {
           hitCount++;
       }
@@ -120,8 +118,7 @@ public class ESSearchTest
       // Try our searches
       ESSearch search = new ESSearch("unit", "large", ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
       search.search(getQuery("test-hits.json"));
-      Map<String, Object> hit;
-      while ((hit = search.next()) != null)
+      while ((search.next()) != null)
       {
           hitCount++;
       }
@@ -146,6 +143,7 @@ public class ESSearchTest
             logger.debug(" --> " + fieldname + "[" + fields.get(fieldname).getCanonicalName() + "]");
             fieldsCount++;
         }
+        search.close();
         Assert.assertEquals("Number of total fields", LARGE_NUM_FIELDS, fieldsCount);
     }
 
@@ -158,8 +156,7 @@ public class ESSearchTest
         // Try our searches
         ESSearch search = new ESSearch(null, null, ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
         search.search(getQuery("test-hits.json"));
-        Map<String, Object> hit;
-        while ((hit = search.next()) != null)
+        while ((search.next()) != null)
         {
             hitCount++;
         }
@@ -209,6 +206,7 @@ public class ESSearchTest
             logger.debug(" --> " + fieldname + "[" + fields.get(fieldname).getCanonicalName() + "]");
             fieldsCount++;
         }
+        search.close();
         Assert.assertEquals("Number of total fields", GENERAL_NUM_FIELDS, fieldsCount);
     }
 
@@ -248,6 +246,7 @@ public class ESSearchTest
             logger.debug(" --> " + fieldname + "[" + fields.get(fieldname).getCanonicalName() + "]");
             fieldsCount++;
         }
+        search.close();
         Assert.assertEquals("Number of fields for type.", TEST_TYPE_NUM_FIELDS, fieldsCount);
     }
 
