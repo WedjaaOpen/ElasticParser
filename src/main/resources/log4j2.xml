@@ -6,7 +6,13 @@
     </Console>
   </Appenders>
   <Loggers>
-    <Logger name="net.wedjaa.elasticparser" level="info" additivity="false">
+    <Logger name="net.wedjaa.elasticparser" level="warn" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="net.wedjaa.elasticparser.pager" level="warn" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="net.wedjaa.elasticparser.resolver" level="warn" additivity="false">
       <AppenderRef ref="Console"/>
     </Logger>
     <Logger name="org.elasticsearch" level="warn" additivity="false">

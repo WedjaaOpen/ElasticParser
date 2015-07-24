@@ -32,8 +32,8 @@ import java.util.*;
 public class ESSearchTest
 {
 
-    static final int GENERAL_NUM_HITS = 25;
-    static final int GENERAL_NUM_FIELDS = 7;
+    static final int GENERAL_NUM_HITS = 26;
+    static final int GENERAL_NUM_FIELDS = 36;
     static final int GENERAL_NUM_FACETS = 17;
     static final int GENERAL_NUM_AGGS = 16;
 
@@ -48,7 +48,10 @@ public class ESSearchTest
     static final double GENERAL_AGGS_FIRST_TERM_COUNT = 26;
     static final double GENERAL_AGGS_SECOND_TERM_COUNT = 20;
     static final int TEST_TYPE_NUM_HITS = 20;
-    static final int TEST_TYPE_NUM_FIELDS = 6;
+    static final int TEST_TYPE_NUM_FIELDS = 7;
+    static final int LARGE_NUM_HITS = 1;
+    static final int LARGE_NUM_FIELDS = 28;
+    static final int MULTIPLE_TYPES_NUM_HITS = 25;
 
     static Logger logger = Logger.getLogger(ESSearchTest.class);
 
@@ -68,6 +71,82 @@ public class ESSearchTest
     {
         logger.info("Stopping ES test node");
         stopNode(elasticTestNode);
+    }
+
+    @Test
+    public void testSingleType()
+    {
+      int hitCount = 0;
+
+      logger.info("Testing Single Type");
+      // Try our searches
+      ESSearch search = new ESSearch("unit", "test", ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
+      search.search(getQuery("test-hits.json"));
+      Map<String, Object> hit;
+      while ((hit = search.next()) != null)
+      {
+          hitCount++;
+      }
+      search.close();
+      Assert.assertEquals("Single type number of hits", TEST_TYPE_NUM_HITS, hitCount);
+
+    }
+
+    @Test
+    public void testMultipleTypes()
+    {
+      int hitCount = 0;
+
+      logger.info("Testing Multiple Types");
+      // Try our searches
+      ESSearch search = new ESSearch("unit", "test,related", ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
+      search.search(getQuery("test-hits.json"));
+      Map<String, Object> hit;
+      while ((hit = search.next()) != null)
+      {
+          hitCount++;
+      }
+      search.close();
+      Assert.assertEquals("Multiple types number of hits", MULTIPLE_TYPES_NUM_HITS, hitCount);
+
+    }
+
+    @Test
+    public void testLargeHitDocument()
+    {
+      int hitCount = 0;
+
+      logger.info("Testing Large Document");
+      // Try our searches
+      ESSearch search = new ESSearch("unit", "large", ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
+      search.search(getQuery("test-hits.json"));
+      Map<String, Object> hit;
+      while ((hit = search.next()) != null)
+      {
+          hitCount++;
+      }
+      search.close();
+      Assert.assertEquals("Large document number of hits", LARGE_NUM_HITS, hitCount);
+
+    }
+
+    @Test
+    public void testLargeHitFields()
+    {
+        logger.info("Testing Large Hit Fields");
+        ESSearch search = new ESSearch("unit", "large", ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
+        Map<String, Class<?>> fields = search.getFields(getQuery("test-hits.json"));
+        List<String> sortedKeys = new ArrayList<String>(fields.keySet());
+        Collections.sort(sortedKeys);
+        Iterator<String> sortedKeyIter = sortedKeys.iterator();
+        int fieldsCount = 0;
+        while (sortedKeyIter.hasNext())
+        {
+            String fieldname = sortedKeyIter.next();
+            logger.debug(" --> " + fieldname + "[" + fields.get(fieldname).getCanonicalName() + "]");
+            fieldsCount++;
+        }
+        Assert.assertEquals("Number of total fields", LARGE_NUM_FIELDS, fieldsCount);
     }
 
     @Test
