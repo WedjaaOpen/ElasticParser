@@ -1,0 +1,21 @@
+{
+   "query": {
+      "filtered": {
+         "query": {
+            "match_all": {}
+         },
+         "filter": {
+            "type": {
+               "value": "test"
+            }
+         }
+      }
+   },
+   "aggregations": {
+      "total": {
+         "filter": {
+            "exists": { "field": "group"}
+         }
+      }
+   }
+}

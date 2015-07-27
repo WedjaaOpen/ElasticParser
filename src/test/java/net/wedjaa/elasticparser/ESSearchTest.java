@@ -52,6 +52,8 @@ public class ESSearchTest
     static final int LARGE_NUM_HITS = 1;
     static final int LARGE_NUM_FIELDS = 28;
     static final int MULTIPLE_TYPES_NUM_HITS = 25;
+	private static final String SIMPLE_AGG_NAME = "total";
+	private static final Long SIMPLE_AGG_COUNT = (long) 20;
 
     static Logger logger = Logger.getLogger(ESSearchTest.class);
 
@@ -82,8 +84,7 @@ public class ESSearchTest
       // Try our searches
       ESSearch search = new ESSearch("unit", "test", ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
       search.search(getQuery("test-hits.json"));
-      Map<String, Object> hit;
-      while ((hit = search.next()) != null)
+      while ((search.next()) != null)
       {
           hitCount++;
       }
@@ -101,8 +102,7 @@ public class ESSearchTest
       // Try our searches
       ESSearch search = new ESSearch("unit", "test,related", ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
       search.search(getQuery("test-hits.json"));
-      Map<String, Object> hit;
-      while ((hit = search.next()) != null)
+      while ((search.next()) != null)
       {
           hitCount++;
       }
@@ -120,8 +120,7 @@ public class ESSearchTest
       // Try our searches
       ESSearch search = new ESSearch("unit", "large", ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
       search.search(getQuery("test-hits.json"));
-      Map<String, Object> hit;
-      while ((hit = search.next()) != null)
+      while ((search.next()) != null)
       {
           hitCount++;
       }
@@ -146,6 +145,7 @@ public class ESSearchTest
             logger.debug(" --> " + fieldname + "[" + fields.get(fieldname).getCanonicalName() + "]");
             fieldsCount++;
         }
+        search.close();
         Assert.assertEquals("Number of total fields", LARGE_NUM_FIELDS, fieldsCount);
     }
 
@@ -158,8 +158,7 @@ public class ESSearchTest
         // Try our searches
         ESSearch search = new ESSearch(null, null, ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
         search.search(getQuery("test-hits.json"));
-        Map<String, Object> hit;
-        while ((hit = search.next()) != null)
+        while ((search.next()) != null)
         {
             hitCount++;
         }
@@ -209,6 +208,7 @@ public class ESSearchTest
             logger.debug(" --> " + fieldname + "[" + fields.get(fieldname).getCanonicalName() + "]");
             fieldsCount++;
         }
+        search.close();
         Assert.assertEquals("Number of total fields", GENERAL_NUM_FIELDS, fieldsCount);
     }
 
@@ -248,6 +248,7 @@ public class ESSearchTest
             logger.debug(" --> " + fieldname + "[" + fields.get(fieldname).getCanonicalName() + "]");
             fieldsCount++;
         }
+        search.close();
         Assert.assertEquals("Number of fields for type.", TEST_TYPE_NUM_FIELDS, fieldsCount);
     }
 
@@ -309,6 +310,20 @@ public class ESSearchTest
         Assert.assertEquals("Nested Aggregations Return " + GENERAL_NUM_AGGS + " Rows",GENERAL_NUM_AGGS, aggsCount);
     }
 
+    @Test
+    public void testSingleAggregation()
+    {
+        logger.info("Testing Single Aggregations");
+        ESSearch search = new ESSearch(null, null, ESSearch.ES_MODE_AGGS, "localhost", 9600, clusterName);
+        search.search(getQuery("test-simple-aggs.json"));
+        Map<String, Object> hit = search.next();
+        Assert.assertNotNull(hit);
+        Assert.assertEquals(SIMPLE_AGG_NAME, hit.get("Aggregation"));
+        Assert.assertEquals(SIMPLE_AGG_COUNT, hit.get("total DocCount"));
+        Assert.assertNull(search.next());
+        search.close();
+    }
+    
 
     @Test
     public void testMultipleAggregations()

@@ -479,7 +479,7 @@ public class ESSearch implements Connection
             searchBuilder.setTypes(types);
         }
 
-        String sizedQuery = setQuerySize(query);
+        setQuerySize(query);
 
         // Execute the search
         SearchResponse searchRes =  searchBuilder

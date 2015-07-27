@@ -25,8 +25,6 @@ package net.wedjaa.elasticparser.pager;
 
 import java.util.Map;
 
-import org.elasticsearch.action.search.SearchResponse;
-
 public interface ESResultsPager {
 	public boolean done();
 	public boolean hit_available();

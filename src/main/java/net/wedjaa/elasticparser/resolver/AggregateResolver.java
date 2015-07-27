@@ -191,7 +191,7 @@ public class AggregateResolver {
 		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
 		Class<?> aggregationClass = getAggregationClass(aggregation);
 		result.add(createBucketsMap(aggregation, aggregation, aggregationClass, parentAggregation));
-		if ( subValues != null ) {
+		if ( subValues != null  && subValues.size() > 0) {
 			logger.debug("Extending simple " + aggregation.getName() + " with contained aggregations.");
 			Iterator<Map<String, Object>> subIter = subValues.iterator();
 			while ( subIter.hasNext() ) {
@@ -257,7 +257,6 @@ public class AggregateResolver {
                 List<List<Map<String, Object>>> splitBuckets = new ArrayList<>();
                 Map<String, Object> entryMap = createBucketsMap(aggregation, bucket, bucket.getClass(), parentAggregation);
 
-				List<Map<String, Object>> bucketAggsValues = null;
 				logger.debug("Bucket Class: " + bucket.getClass());
 
 				Method getAggregationsMethod = classFinder.getMethod("getAggregations", bucket.getClass());
@@ -355,9 +354,7 @@ public class AggregateResolver {
 
 	public List<Map<String, Object>> unrollAggregation(InternalAggregation aggregation, String parentAggregation, int depth) {
 
-		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
-
-        String aggregationType = getAggregationType(aggregation);
+		String aggregationType = getAggregationType(aggregation);
 
         if ( aggregationType.equals(AGGREGATION_NULL) ) {
             logger.warn("Failed to unroll aggregation");
