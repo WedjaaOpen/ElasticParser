@@ -191,7 +191,7 @@ public class AggregateResolver {
 		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
 		Class<?> aggregationClass = getAggregationClass(aggregation);
 		result.add(createBucketsMap(aggregation, aggregation, aggregationClass, parentAggregation));
-		if ( subValues != null ) {
+		if ( subValues != null  && subValues.size() > 0) {
 			logger.debug("Extending simple " + aggregation.getName() + " with contained aggregations.");
 			Iterator<Map<String, Object>> subIter = subValues.iterator();
 			while ( subIter.hasNext() ) {

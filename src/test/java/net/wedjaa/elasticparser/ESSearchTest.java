@@ -52,6 +52,8 @@ public class ESSearchTest
     static final int LARGE_NUM_HITS = 1;
     static final int LARGE_NUM_FIELDS = 28;
     static final int MULTIPLE_TYPES_NUM_HITS = 25;
+	private static final String SIMPLE_AGG_NAME = "total";
+	private static final Long SIMPLE_AGG_COUNT = (long) 20;
 
     static Logger logger = Logger.getLogger(ESSearchTest.class);
 
@@ -308,6 +310,20 @@ public class ESSearchTest
         Assert.assertEquals("Nested Aggregations Return " + GENERAL_NUM_AGGS + " Rows",GENERAL_NUM_AGGS, aggsCount);
     }
 
+    @Test
+    public void testSingleAggregation()
+    {
+        logger.info("Testing Single Aggregations");
+        ESSearch search = new ESSearch(null, null, ESSearch.ES_MODE_AGGS, "localhost", 9600, clusterName);
+        search.search(getQuery("test-simple-aggs.json"));
+        Map<String, Object> hit = search.next();
+        Assert.assertNotNull(hit);
+        Assert.assertEquals(SIMPLE_AGG_NAME, hit.get("Aggregation"));
+        Assert.assertEquals(SIMPLE_AGG_COUNT, hit.get("total DocCount"));
+        Assert.assertNull(search.next());
+        search.close();
+    }
+    
 
     @Test
     public void testMultipleAggregations()
