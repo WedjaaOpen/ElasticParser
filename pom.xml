@@ -9,8 +9,8 @@
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <es.version>1.4.4</es.version>
-    <lucene.version>4.10.3</lucene.version>
+    <parser.es.version>1.7.0</parser.es.version>
+    <lucene.version>4.10.4</lucene.version>
   </properties>
   <description>This library allows the &quot;flattening&quot; of ElasticSearch queries in to scrollable, table like resultsets. It's used currently in the ElasticJasper adapter for Jasper Reports and soon will be features in ElasticBirt - a data adapter between BIRT and ElasticSearch.</description>
   <organization>
@@ -31,7 +31,7 @@
         <dependency>
                 <groupId>org.elasticsearch</groupId>
                 <artifactId>elasticsearch</artifactId>
-                <version>${es.version}</version>
+                <version>${parser.es.version}</version>
         </dependency>
         <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
