@@ -34,6 +34,7 @@ public class ESSearchTest
 
     static final int GENERAL_NUM_HITS = 26;
     static final int GENERAL_NUM_FIELDS = 36;
+    static final int PROJECTION_NUM_FIELDS = 3;
     static final int GENERAL_NUM_FACETS = 17;
     static final int GENERAL_NUM_AGGS = 16;
 
@@ -210,6 +211,26 @@ public class ESSearchTest
         }
         search.close();
         Assert.assertEquals("Number of total fields", GENERAL_NUM_FIELDS, fieldsCount);
+    }
+    
+    @Test
+    public void testHitsFieldsWithProjection()
+    {
+        logger.info("Testing Hits Fields with Projection");
+        ESSearch search = new ESSearch(null, null, ESSearch.ES_MODE_HITS, "localhost", 9600, clusterName);
+        Map<String, Class<?>> fields = search.getFields(getQuery("test-hits-projection.json"));
+        List<String> sortedKeys = new ArrayList<String>(fields.keySet());
+        Collections.sort(sortedKeys);
+        Iterator<String> sortedKeyIter = sortedKeys.iterator();
+        int fieldsCount = 0;
+        while (sortedKeyIter.hasNext())
+        {
+            String fieldname = sortedKeyIter.next();
+            logger.debug(" --> " + fieldname + "[" + fields.get(fieldname).getCanonicalName() + "]");
+            fieldsCount++;
+        }
+        search.close();
+        Assert.assertEquals("Number of total fields projected", PROJECTION_NUM_FIELDS, fieldsCount);
     }
 
     @Test

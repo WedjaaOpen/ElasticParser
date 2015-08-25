@@ -32,6 +32,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHitField;
 
 public class ESHitsPager implements ESResultsPager {
 
@@ -135,7 +136,18 @@ public class ESHitsPager implements ESResultsPager {
 		}
 
 		hits_count++;
-		return hits.next().getSource();
+		SearchHit hit = hits.next();
+		if(hit.getSource() != null) {
+			return hit.getSource();
+		}
+		if(hit.fields() != null) {
+			Map<String, Object> fields = new HashMap<>();
+			for(Map.Entry<String, SearchHitField> field : hit.fields().entrySet()) {
+				fields.put(field.getKey(), field.getValue().getValue());
+			}
+			return fields;
+		}
+		return null;
 	}
 
 	@Override
@@ -174,11 +186,21 @@ public class ESHitsPager implements ESResultsPager {
 			logger.debug("Hits on this page: " + hits.length);
 			for (SearchHit hit : hits) {
 				try {
-					Set<String> field_names = hit.getSource().keySet();
-					for (String field_name : field_names) {
-						if (!result.containsKey(field_name)) {
-							if (hit.getSource().get(field_name) != null) {
-								result.put(field_name, hit.getSource().get(field_name).getClass());
+					if(hit.getSource() != null) {
+						Set<String> field_names = hit.getSource().keySet();
+						for (String field_name : field_names) {
+							if (!result.containsKey(field_name)) {
+								if (hit.getSource().get(field_name) != null) {
+									result.put(field_name, hit.getSource().get(field_name).getClass());
+								}
+							}
+						}
+					} else if(hit.fields() != null) {
+						for(Map.Entry<String, SearchHitField> field : hit.fields().entrySet()) {
+							if(!result.containsKey(field.getKey())) {
+								if(field.getValue().getValue() != null) {
+									result.put(field.getKey(), field.getValue().getValue().getClass());
+								}
 							}
 						}
 					}
@@ -189,7 +211,7 @@ public class ESHitsPager implements ESResultsPager {
 			}
 
 		}
-
+		
 		return result;
 	}
 
