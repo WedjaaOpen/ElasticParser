@@ -1,7 +1,4 @@
 {
-	"fields" : [
-		"name", 
-		"description", 
-		"group"
-		]
+	"_source" : [ "name",  "description",  "group"],
+	"query": { "match_all": {} }
 }

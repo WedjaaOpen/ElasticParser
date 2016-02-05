@@ -1,13 +1,13 @@
 /****
- * 
- * Copyright 2013-2014 Wedjaa <http://www.wedjaa.net/>
- * 
+ *
+ * Copyright 2013-2016 Wedjaa <http://www.wedjaa.net/>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -44,11 +44,11 @@ public class ESAggregationPager implements ESResultsPager {
 	private List<Map<String,Object>> aggregate_values;
 	private Iterator<Map<String, Object>> valueIterator;
 	private int current_idx = 0;
-	
+
 	public ESAggregationPager(SearchResponse initialResponse, String query) {
-		
+
 		this.query = query;
-		
+
 		this.aggregateResolver= AggregateResolver.getInstance();
 		Aggregations aggregations = initialResponse.getAggregations();
 		if ( aggregations != null ) {
@@ -59,10 +59,10 @@ public class ESAggregationPager implements ESResultsPager {
 			logger.warn("Aggregation pager not being populated: no aggregations have been found in the result");
 			this.aggregate_values = new ArrayList<Map<String,Object>>();
 		}
-		
+
 		this.valueIterator = this.aggregate_values.iterator();
 	}
-	
+
 	@Override
 	public boolean done() {
 		return !valueIterator.hasNext();
@@ -111,7 +111,7 @@ public class ESAggregationPager implements ESResultsPager {
 	@Override
 	public Map<String,Class<?>> getResponseFields() {
 		Map<String,Class<?>> result = new HashMap<String,Class<?>>();
-		
+
 		if ( aggregate_values != null ) {
 			for (Map<String,Object> value: aggregate_values) {
 				for (String fieldName: value.keySet() ) {
@@ -124,5 +124,5 @@ public class ESAggregationPager implements ESResultsPager {
 
 		return result;
 	}
-	
+
 }

@@ -1,3 +1,26 @@
+/****
+ *
+ * Copyright 2013-2016 Wedjaa <http://www.wedjaa.net/>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+/**
+ * @author Fabio Torchetti
+ *
+ */
+
 package net.wedjaa.elasticparser;
 
 import org.apache.http.HttpResponse;
@@ -9,7 +32,6 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
@@ -35,7 +57,6 @@ public class ESSearchTest
     static final int GENERAL_NUM_HITS = 26;
     static final int GENERAL_NUM_FIELDS = 36;
     static final int PROJECTION_NUM_FIELDS = 3;
-    static final int GENERAL_NUM_FACETS = 17;
     static final int GENERAL_NUM_AGGS = 16;
 
     static final int MULTIPLE_NUM_AGGS = 3;
@@ -44,8 +65,6 @@ public class ESSearchTest
     static final double MULTIPLE_AGGS_PRAG_STAT_SUM = 35;
     static final double MULTIPLE_AGGS_PRAG_NUM_SUM = 14;
 
-    static final Integer GENERAL_FACETS_FIRST_TERM_COUNT = 2;
-    static final Integer GENERAL_FACETS_SECOND_TERM_COUNT = 9;
     static final double GENERAL_AGGS_FIRST_TERM_COUNT = 26;
     static final double GENERAL_AGGS_SECOND_TERM_COUNT = 20;
     static final int TEST_TYPE_NUM_HITS = 20;
@@ -212,7 +231,7 @@ public class ESSearchTest
         search.close();
         Assert.assertEquals("Number of total fields", GENERAL_NUM_FIELDS, fieldsCount);
     }
-    
+
     @Test
     public void testHitsFieldsWithProjection()
     {
@@ -273,31 +292,6 @@ public class ESSearchTest
         Assert.assertEquals("Number of fields for type.", TEST_TYPE_NUM_FIELDS, fieldsCount);
     }
 
-    @Test
-    public void testFacets()
-    {
-        logger.info("Testing Facets");
-        ESSearch search = new ESSearch(null, null, ESSearch.ES_MODE_FACETS, "localhost", 9600, clusterName);
-        search.search(getQuery("test-facets.json"));
-        Map<String, Object> hit;
-        int facetsCount = 0;
-        while ((hit = search.next()) != null)
-        {
-            logger.debug("Facet: " + hit);
-            if (hit.get("FacetName").toString().equals("Utilitarians Numbers") && hit.get("Term").toString()
-                    .equals("5"))
-            {
-                Assert.assertEquals("Utilitatian Facets Count", GENERAL_FACETS_FIRST_TERM_COUNT, hit.get("Count"));
-            }
-            if (hit.get("FacetName").toString().equals("First 10") && hit.get("Term").toString().equals("the"))
-            {
-                Assert.assertEquals("Number of \"the\" facets", GENERAL_FACETS_SECOND_TERM_COUNT, hit.get("Count"));
-            }
-            facetsCount++;
-        }
-        search.close();
-        Assert.assertEquals("Facets Row Counte", GENERAL_NUM_FACETS, facetsCount);
-    }
 
     @Test
     public void testNestedAggregations()
@@ -344,7 +338,7 @@ public class ESSearchTest
         Assert.assertNull(search.next());
         search.close();
     }
-    
+
 
     @Test
     public void testMultipleAggregations()
@@ -429,7 +423,7 @@ public class ESSearchTest
 
         HttpResponse response;
         // Drop the index if it's there
-        HttpDelete httpdelete = new HttpDelete("http://localhost:9500/unit");
+        HttpDelete httpdelete = new HttpDelete("http://localhost:9500/unit*");
         try
         {
             response = httpclient.execute(httpdelete);
@@ -500,10 +494,15 @@ public class ESSearchTest
     private static Node startESNode(String clusterName)
     {
 
-        Settings nodeSettings = ImmutableSettings.settingsBuilder().put("transport.tcp.port", "9600-9700")
-                .put("http.port", "9500").put("http.max_content_length", "104857600").build();
+        Settings nodeSettings = Settings.settingsBuilder()
+        		.put("path.home", "target")
+        		.put("transport.tcp.port", "9600-9700")
+                .put("http.port", "9500")
+                .put("http.max_content_length", "100M").build();
 
-        Node node = NodeBuilder.nodeBuilder().settings(nodeSettings).clusterName(clusterName).node();
+        Node node = NodeBuilder.nodeBuilder()
+        		.settings(nodeSettings)
+        		.clusterName(clusterName).node();
 
         node.start();
 
@@ -512,6 +511,6 @@ public class ESSearchTest
 
     private static void stopNode(Node node)
     {
-        node.stop();
+        node.close();
     }
 }
