@@ -1,13 +1,13 @@
 /****
- * 
- * Copyright 2013-2014 Wedjaa <http://www.wedjaa.net/>
+ *
+ * Copyright 2013-2016 Wedjaa <http://www.wedjaa.net/>
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -166,7 +166,7 @@ public class AggregateResolver {
 
 		if ( parentAggregation == null ) {
 			parentAggregation = "";
-		} 
+		}
 
 		logger.debug("unrollSimple: " + aggregation.getName() + "; Parent: " + parentAggregation +"; Depth: " + depth);
 		Class<?> aggClass = aggregation.getClass();
@@ -199,7 +199,7 @@ public class AggregateResolver {
 				Iterator<Map<String,Object>> resIter = result.iterator();
 				while ( resIter.hasNext() ) {
 					Map<String,Object> resultMap = resIter.next();
-					Iterator<String> resKeyIter = resultMap.keySet().iterator(); 
+					Iterator<String> resKeyIter = resultMap.keySet().iterator();
 					while ( resKeyIter.hasNext() ) {
 						String resKey = resKeyIter.next();
 						// Don't overwrite inner values
@@ -380,7 +380,7 @@ public class AggregateResolver {
 	public List<Map<String, Object>> explode(Map<String, Aggregation> aggregations) {
 		return  explode(aggregations, "Aggregation", 0);
 	}
-	
+
 	private List<Map<String, Object>> explode(Map<String, Aggregation> aggregations, String parentAggregation, int depth) {
 
 		List<Map<String, Object>> entries = new ArrayList<Map<String, Object>>();

@@ -1,13 +1,13 @@
 /****
- * 
- * Copyright 2013-2014 Wedjaa <http://www.wedjaa.net/>
- * 
+ *
+ * Copyright 2013-2016 Wedjaa <http://www.wedjaa.net/>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -42,17 +42,17 @@ public class ClassFinder {
 
 	private final static Logger logger = Logger.getLogger(ClassFinder.class);
 	private Map<Class<?>, List<Method>> classMethods;
-	
+
 	public ClassFinder() {
 		this.classMethods = new HashMap<Class<?>, List<Method>>();
 	}
-	
+
 	public boolean hasMethod(String method, Class<?> objClass) {
 
 		boolean result = false;
 
 		List<Method> methods = getClassMethods(objClass);
-		
+
 		if (methods == null) {
 			logger.warn("Failed to verify presence of " + method + " on class "
 					+ objClass.getCanonicalName());
@@ -66,13 +66,13 @@ public class ClassFinder {
 		return result;
 
 	}
-	
+
 	public Method getMethod(String method, Class<?> objClass) {
 
 		Method result = null;
-		
+
 		List<Method> methods = getClassMethods(objClass);
-		
+
 		if (methods == null) {
 			logger.warn("Failed to find method " + methods + " on class "
 					+ objClass);
@@ -88,8 +88,8 @@ public class ClassFinder {
 		}
 		return result;
 	}
-	
-	
+
+
 	public List<Method> getClassMethods(Class<?> objClass) {
 
 		if (!classMethods.containsKey(objClass)) {
@@ -98,8 +98,8 @@ public class ClassFinder {
 
 		return classMethods.get(objClass);
 	}
-	
-	
+
+
 	public static Set<Class<?>> getRelatedClasses(Class<?> clazz) {
 	    List<Class<?>> res = new ArrayList<Class<?>>();
 	    do {
@@ -122,13 +122,13 @@ public class ClassFinder {
 	            break;
 	        }
 
-	        // Now inspect the superclass 
+	        // Now inspect the superclass
 	        clazz = superClass;
 	    } while (!"java.lang.Object".equals(clazz.getCanonicalName()));
 
 	    return new HashSet<Class<?>>(res);
-	}  
-		
+	}
+
 
 	private void populateMethods(Class<?> inspectedClass) {
 		logger.trace("Examining methods for class " + inspectedClass);
@@ -169,7 +169,7 @@ public class ClassFinder {
 				}
 			}
 		}
-		
+
 		return genericClass;
 	}
 

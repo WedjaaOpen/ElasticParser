@@ -1,6 +1,6 @@
 /****
  *
- * Copyright 2013-2014 Wedjaa <http://www.wedjaa.net/>
+ * Copyright 2013-2016 Wedjaa <http://www.wedjaa.net/>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -23,6 +23,7 @@
 
 package net.wedjaa.elasticparser;
 
+import java.net.InetSocketAddress;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.CallableStatement;
@@ -45,7 +46,6 @@ import java.util.concurrent.Executor;
 
 import net.wedjaa.elasticparser.pager.ESAggregationPager;
 import net.wedjaa.elasticparser.pager.ESEmptyPager;
-import net.wedjaa.elasticparser.pager.ESFacetsPager;
 import net.wedjaa.elasticparser.pager.ESHitsPager;
 import net.wedjaa.elasticparser.pager.ESResultsPager;
 
@@ -55,11 +55,10 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
-
+import org.elasticsearch.search.sort.SortOrder;
 import org.json.JSONObject;
 
 public class ESSearch implements Connection
@@ -83,8 +82,7 @@ public class ESSearch implements Connection
     private static Logger logger = Logger.getLogger(ESSearch.class);
 
     public final static int ES_MODE_HITS = 0;
-    public final static int ES_MODE_FACETS = 1;
-    public final static int ES_MODE_AGGS = 2;
+    public final static int ES_MODE_AGGS = 1;
 
     public final static String ES_DEFAULT_HOST = "localhost";
     public final static int ES_DEFAULT_PORT = 9300;
@@ -385,11 +383,13 @@ public class ESSearch implements Connection
         logger.debug("Creating new client to connect to: " + this.hostname);
 
         // Prepare a client for the ES Server
-        Settings settings = ImmutableSettings.settingsBuilder().put("cluster.name", this.cluster)
-                .put("client.transport.sniff", true).build();
+        Settings settings = Settings.settingsBuilder()
+        		.put("cluster.name", this.cluster)
+                .put("client.transport.sniff", true)
+                .build();
 
-        InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(this.hostname, this.port);
-        TransportClient transportClient = new TransportClient(settings);
+        InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(new InetSocketAddress(this.hostname, this.port));
+        TransportClient transportClient = TransportClient.builder().settings(settings).build();
         transportClient.addTransportAddress(transportAddress);
         this.esClient = transportClient;
 
@@ -414,7 +414,7 @@ public class ESSearch implements Connection
             searchBuilder.setTypes(types);
         }
 
-        searchBuilder.setSearchType(SearchType.COUNT);
+        searchBuilder.setSize(0);
 
         SearchResponse searchRes = searchBuilder.setSource(query.getBytes()).execute().actionGet();
 
@@ -447,7 +447,8 @@ public class ESSearch implements Connection
         return queryObject.toString();
     }
 
-    private SearchResponse executeSearch(String query, boolean isScrolling)
+    @SuppressWarnings("deprecation")
+	private SearchResponse executeSearch(String query, boolean isScrolling)
     {
 
         SearchRequestBuilder searchBuilder;
@@ -465,8 +466,12 @@ public class ESSearch implements Connection
         // Setup a scroll search for multi-paged results
         if ( isScrolling ) {
             logger.debug("Creating a scrolling query");
+            // SCAN has been deprecated - but the alternative method
+            // of sorting by _doc may not be applied if the user has
+            // chosen a different kind of sorting.
+           
             searchBuilder
-                    .setSearchType(SearchType.SCAN)
+            		.setSearchType(SearchType.SCAN)
                     .setScroll(new TimeValue(ESHitsPager.SCROLL_KEEPALIVE));
 
         }  else {
@@ -482,15 +487,20 @@ public class ESSearch implements Connection
         setQuerySize(query);
 
         // Execute the search
-        SearchResponse searchRes =  searchBuilder
-                                        .setSource(query)
+        searchBuilder.setSource(query);
+        
+        logger.debug("Search: " + searchBuilder.toString());
+        
+        SearchResponse searchRes = searchBuilder
                                         .execute()
                                         .actionGet();
 
         logger.debug("Search ready");
+        
         if ( isScrolling ) {
             logger.debug("ScrollId: " + searchRes.getScrollId());
         }
+        
         return searchRes;
 
     }
@@ -523,12 +533,6 @@ public class ESSearch implements Connection
                 logger.debug("The query returns " + searchRes.getHits().getTotalHits() + " total matches.");
                 logger.debug("Response: " + searchRes.toString());
                 pager = new ESHitsPager(searchRes, query, getPageSize(query), esClient);
-                break;
-            case ESSearch.ES_MODE_FACETS:
-                // Facets will return all the results in one
-                // query
-                searchRes = executeSearch(query);
-                pager = new ESFacetsPager(searchRes, query);
                 break;
             case ESSearch.ES_MODE_AGGS:
                 // Aggregations will return all the results in one
