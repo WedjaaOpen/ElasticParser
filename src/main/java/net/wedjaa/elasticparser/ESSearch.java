@@ -59,6 +59,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.shield.ShieldPlugin;
 import org.json.JSONObject;
 
 public class ESSearch implements Connection
@@ -383,13 +384,22 @@ public class ESSearch implements Connection
         logger.debug("Creating new client to connect to: " + this.hostname);
 
         // Prepare a client for the ES Server
-        Settings settings = Settings.settingsBuilder()
-        		.put("cluster.name", this.cluster)
-                .put("client.transport.sniff", true)
-                .build();
+        Settings.Builder settingBuilder = Settings.settingsBuilder();
+        settingBuilder.put("cluster.name", this.cluster)
+                .put("client.transport.sniff", true);
+
+        // Check if we need to use authentication
+        if (this.username != null && this.password != null) {
+            settingBuilder.put("shield.user",  this.username + ":" + this.password);
+        }
 
         InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(new InetSocketAddress(this.hostname, this.port));
-        TransportClient transportClient = TransportClient.builder().settings(settings).build();
+
+        TransportClient transportClient = TransportClient.builder()
+                .addPlugin(ShieldPlugin.class)
+                .settings(settingBuilder.build())
+                .build();
+
         transportClient.addTransportAddress(transportAddress);
         this.esClient = transportClient;
 

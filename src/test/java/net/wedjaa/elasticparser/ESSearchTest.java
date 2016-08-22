@@ -32,9 +32,11 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
+import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
+import org.elasticsearch.transport.ReceiveTimeoutTransportException;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -72,8 +74,13 @@ public class ESSearchTest
     static final int LARGE_NUM_HITS = 1;
     static final int LARGE_NUM_FIELDS = 28;
     static final int MULTIPLE_TYPES_NUM_HITS = 25;
+
 	private static final String SIMPLE_AGG_NAME = "total";
 	private static final Long SIMPLE_AGG_COUNT = (long) 20;
+
+    private static final int SHIELD_LISTENER_PORT = 12000;
+    private static final String SHIELD_USER = "shield_user";
+    private static final String SHIELD_PASSWORD = "shield_password";
 
     static Logger logger = Logger.getLogger(ESSearchTest.class);
 
@@ -373,6 +380,39 @@ public class ESSearchTest
         Assert.assertEquals("Multiple Aggregations Returns "+ MULTIPLE_NUM_AGGS +" Rows",MULTIPLE_NUM_AGGS, aggsCount);
     }
 
+    @Test
+    public void testShieldAuthentication()
+    {
+        logger.info("Testing Shield Authentication");
+        ESShieldServer shieldServer = new ESShieldServer(12000);
+        Thread listener = new Thread(shieldServer);
+        listener.start();
+        logger.debug("Shield Authentication Listener Started");
+
+        ESSearch search = new ESSearch(null, null, ESSearch.ES_MODE_HITS, "localhost", SHIELD_LISTENER_PORT,
+                SHIELD_USER, SHIELD_PASSWORD, clusterName);
+
+        logger.debug("Shield Authenticated Search Starting");
+        try {
+            search.search(getQuery("test-hits.json"));
+        } catch(NoNodeAvailableException nonodeEx) {
+            logger.debug("Client finally gave up - checking  for authentication header");
+            try {
+                listener.join();
+                Assert.assertTrue("Client Passed Authentication in Request",
+                        shieldServer.authenticated(SHIELD_USER, SHIELD_PASSWORD));
+            } catch (InterruptedException intEx) {
+                logger.error("Failed to wait for server to join: " + intEx.getLocalizedMessage());
+            }
+        } catch (Exception ex) {
+            logger.error(ex);
+            logger.error("Failed to test Shield Authentication: " + ex.getLocalizedMessage());
+        } finally {
+            search.close();
+        }
+
+    }
+
     private String setQuerySize(String query, int size)
     {
         JSONObject queryObject = new JSONObject(query);
@@ -511,6 +551,7 @@ public class ESSearchTest
 
     private static void stopNode(Node node)
     {
+
         node.close();
     }
 }

@@ -1,2 +1,7 @@
 data
 target
+ElasticParser.ipr
+ElasticParser.iws
+parser.iml
+.project
+.classpath
