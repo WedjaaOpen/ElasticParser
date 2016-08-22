@@ -388,15 +388,20 @@ public class ESSearch implements Connection
         settingBuilder.put("cluster.name", this.cluster)
                 .put("client.transport.sniff", true);
 
-        // Check if we need to use authentication
-        if (this.username != null && this.password != null) {
-            settingBuilder.put("shield.user",  this.username + ":" + this.password);
+        TransportClient.Builder clientBuilder = TransportClient.builder();
+
+        // Check if we need to use authentication if we have a username, password can
+        // be null or empty.
+        if (this.username != null && !this.username.isEmpty()) {
+            String password = this.password != null ? this.password : "";
+            settingBuilder.put("shield.user",  this.username + ":" + password);
+            // Add Shield plugin only if needed
+            clientBuilder.addPlugin(ShieldPlugin.class);
         }
 
         InetSocketTransportAddress transportAddress = new InetSocketTransportAddress(new InetSocketAddress(this.hostname, this.port));
 
-        TransportClient transportClient = TransportClient.builder()
-                .addPlugin(ShieldPlugin.class)
+        TransportClient transportClient = clientBuilder
                 .settings(settingBuilder.build())
                 .build();
 
